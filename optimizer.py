@@ -3,13 +3,18 @@ Perform parameter optimisation for the model
 """
 
 from __future__ import division
-
+from time import time
 import numpy as np
+from operator import itemgetter
 
 from ezplot import figure, show
 from pybo import solve_bayesopt
 from sklearn.neighbors import KNeighborsClassifier
 from run_detectors import *
+from sklearn.grid_search import GridSearchCV, RandomizedSearchCV
+from scipy.stats import randint as sp_randint
+from scipy.stats import uniform
+
 
 x_path = 'resources/X.p'
 y_path = 'resources/y.p'
@@ -27,6 +32,7 @@ def f1(x):
     pred = run_cv_pred(X, y, clf, n_folds=2)
     return accuracy(y, pred)
 
+
 def f2(x):
     """
     Test function that we will optimize. This is a simple sinusoidal function
@@ -40,7 +46,7 @@ def f2(x):
 def main():
     """Run the demo."""
     # grab a test function
-    bounds = [0.2, 1]
+    bounds = [0.001, 0.15]
     x = np.linspace(bounds[0], bounds[1], 500)
 
     # solve the model
@@ -60,5 +66,39 @@ def main():
     print xbest
 
 
+# Utility function to report best scores
+def report(grid_scores, n_top=3):
+    top_scores = sorted(grid_scores, key=itemgetter(1), reverse=True)[:n_top]
+    for i, score in enumerate(top_scores):
+        print("Model with rank: {0}".format(i + 1))
+        print("Mean validation score: {0:.3f} (std: {1:.3f})".format(
+            score.mean_validation_score,
+            np.std(score.cv_validation_scores)))
+        print("Parameters: {0}".format(score.parameters))
+        print("")
+
+
+# specify parameters and distributions to sample from
+# randint takes a low and high val
+param_dist = {"max_depth": sp_randint(2, 11),
+              "max_features": uniform(loc=0.01, scale=0.05),
+              #"min_samples_split": sp_randint(1, 11),
+              #"min_samples_leaf": sp_randint(1, 11),
+              "bootstrap": [True, False],
+              "criterion": ["gini", "entropy"]}
+
+
+
 if __name__ == '__main__':
-    main()
+    # run randomized search
+    n_iter_search = 20
+    clf = RandomForestClassifier(n_estimators=20, n_jobs=-1)
+    random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+                                       n_iter=n_iter_search)
+
+    start = time()
+    random_search.fit(X, y)
+    print("RandomizedSearchCV took %.2f seconds for %d candidates"
+          " parameter settings." % ((time() - start), n_iter_search))
+    report(random_search.grid_scores_)
+    # main()

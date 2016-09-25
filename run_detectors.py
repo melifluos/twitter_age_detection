@@ -39,7 +39,7 @@ classifiers = [
     # DecisionTreeClassifier(max_depth=5),
     # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
     # all of the cores are used
-    RandomForestClassifier(max_depth=5, n_estimators=20, criterion='entropy', max_features=0.1, n_jobs=-1)
+    RandomForestClassifier(max_depth=5, n_estimators=20, criterion='entropy', max_features=0.038, n_jobs=-1)
     # AdaBoostClassifier(),
     # GradientBoostingClassifier(n_estimators=100)
 ]
