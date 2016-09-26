@@ -10,6 +10,7 @@ TODO:
 from scipy.sparse import lil_matrix
 import pandas as pd
 import cPickle as pickle
+import numpy as np
 
 __author__ = 'benchamberlain'
 
@@ -121,6 +122,7 @@ def pickle_sparse(sparse, path):
 def read_pickle(path):
     with open(path, 'rb') as infile:
         return pickle.load(infile)
+
 
 if __name__ == "__main__":
     get_fan_idx()
