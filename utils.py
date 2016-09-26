@@ -17,15 +17,15 @@ __author__ = 'benchamberlain'
 
 def edge_list_to_sparse_mat(edge_list):
     """
-    Convert an edge list into a sparse matrix
-    :param edge_list: The edge list in the form fan_id star_idx
+    Convert a pandas DF edge list into a scipy csc sparse matrix
+    :param edge_list: A pandas DF with columns [fan_idx, star_idx]
     :return: A Columnar sparse matrix
     """
     # Create matrix representation (adjacency matrix) of edge list
     data_shape = edge_list.max(axis=0)
     print 'building sparse matrix of size {0}'.format(data_shape)
-    X = lil_matrix((data_shape['fan_index'] + 1, data_shape['star_index'] + 1), dtype=int)
-    X[edge_list['fan_index'].values, edge_list['star_index'].values] = 1
+    X = lil_matrix((data_shape['fan_idx'] + 1, data_shape['star_idx'] + 1), dtype=int)
+    X[edge_list['fan_idx'].values, edge_list['star_idx'].values] = 1
     return X.tocsc()
 
 
@@ -51,51 +51,39 @@ def balance_classes(input_df, n_cat2=23000, n_cat9=1000):
     return input_df
 
 
-def construct_edge_list(path, include_implicits=False, balance_classes=False):
-    """
-    Assigns each fan an index and constructs an edge list (fan_idx, star_idx) that is used to make a sparse design
-    matrix
-    :param path: path to data in the format fan_id,star_id,star_idx,num_followers,cat,weight
-    :param include_implicits: Include inferred age classes
-    :param balance: the input classes
-    :return: A pandas DF where each row is an edge of the graph and columns are [fan_idx, star_idx]
-    :return: A pandas DF of target variables
-    """
-    target_df = pd.read_csv(path)
-    # remove any grandparents
-    target_df = target_df[target_df['weight'] == 1]
-
-    print target_df['cat'].value_counts()
-
-    if balance_classes:
-        # reduce the counts in some classes
-        target_df = balance_classes(target_df)
-    print 'using category frequencies: '
-    print target_df['cat'].value_counts().sort_index() / target_df.shape[0]
-    # Set the index of each fan
-    target_df['index'] = range(target_df.shape[0])
-    target_df = target_df[['index', 'fan_id', 'cat']]
-    # target_df.to_csv('help.csv')
-    target_df.columns = ['fan_index', 'fan_id', 'cat']
-    y = target_df['cat']
-    print '{0} target values'.format(len(y))
-    y.to_csv('local_resources/target_ages.csv')
-    # join the new fan index to the star index
-    all_data = fan_star.merge(target_df)
-    # Just keep the fan index and the star index
-    edge_list = all_data[['fan_index', 'index']]
-    edge_list.columns = ['fan_index', 'star_index']
-    edge_list.to_csv('local_resources/edge_list.csv', index=False)
-    return edge_list, np.array(y)
-
-
 def remove_duplicate_labelled_fans():
+    """
+    Creates a deduplicated list of fans from the raw data
+    :return:
+    """
     fans = pd.read_csv('resources/raw_data/labelled_fans.csv')
     fans = fans.drop_duplicates('fan_id')
     fans[['fan_id', 'age']].to_csv('resources/labelled_fans.csv', index=False)
 
 
-def get_fan_idx():
+def preprocess_data(path):
+    """
+    Reads a csv with columns fan_id star_id star_idx num_followers cat weight
+    Removes duplicates and creates and produces data in standard machine learning format X,y
+    :param path:
+    :return: sparse csc matrix X of [fan_idx,star_idx]
+    :return: numpy array y of target categories
+    """
+    temp = pd.read_csv(path)
+    input_data = temp.drop_duplicates(['fan_id', 'star_id'])
+    # replace the fan ids with an index
+    fan_ids = input_data['fan_id'].drop_duplicates()
+    idx = np.arange(len(fan_ids))
+    lookup = pd.DataFrame(data={'fan_id': fan_ids.values, 'fan_idx': idx}, index=idx)
+    all_data = input_data.merge(lookup, 'left')
+    edge_list = all_data[['fan_idx', 'star_idx']]
+    edge_list.columns = ['fan_idx', 'star_idx']
+    y = all_data[['fan_idx', 'cat']].drop_duplicates()
+    X = edge_list_to_sparse_mat(edge_list)
+    return X, y, edge_list
+
+
+def get_fan_idx_lookup():
     """
     Switch the fan_ids for indices - better for anonymity and making sparse matrics
     :return: writes resources/fan_list.csv
@@ -105,7 +93,7 @@ def get_fan_idx():
     # parameter keep=False this might cause problems with unindexed fans later though.
     fans = fans.drop_duplicates('fan_id')
     fans = fans.reset_index()
-    fans[['index', 'fan_id']].to_csv('resources/fan_list.csv', index=False)
+    fans[['index', 'fan_id']].to_csv('resources/fan_id2index_lookup.csv', index=False)
 
 
 def pickle_sparse(sparse, path):
@@ -119,10 +107,32 @@ def pickle_sparse(sparse, path):
         pickle.dump(sparse, outfile, protocol=2)
 
 
+def persist_edgelist(edge_list, path):
+    """
+    writes the edge_list to file as a .edgelist format file compatible with node2vec
+    :param edge_list: A pandas DF with columns [fan_idx, star_idx]
+    :param path: the path to write the file to
+    :return: None
+    """
+    edge_list.to_csv(path, index=False, sep=" ", header=False)
+
+
+def persist_data(folder, X, y):
+    """
+    Write the scipy csc sparse matrix X and a pandas DF y to disk
+    :param path: the path to write data to
+    :param X: scipy sparse css feature matrix
+    :param y: pandas DF target values with columns [fan_idx, cat]
+    :return: None
+    """
+    pickle_sparse(X, folder + '/X.p')
+    y.to_pickle(folder + '/y.p')
+
+
 def read_pickle(path):
     with open(path, 'rb') as infile:
         return pickle.load(infile)
 
 
 if __name__ == "__main__":
-    get_fan_idx()
+    pass
