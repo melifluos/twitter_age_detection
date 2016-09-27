@@ -11,14 +11,15 @@ from ezplot import figure, show
 from pybo import solve_bayesopt
 from sklearn.neighbors import KNeighborsClassifier
 from run_detectors import *
+from utils import *
 from sklearn.grid_search import GridSearchCV, RandomizedSearchCV
 from scipy.stats import randint as sp_randint
 from scipy.stats import uniform
 
-
-x_path = 'resources/X.p'
-y_path = 'resources/y.p'
-X = read_pickle(x_path)
+x_path = 'resources/test/X.p'
+y_path = 'resources/test/y.p'
+#X = read_pickle(x_path)
+X = read_embedding('node2vec/emb/test32.emd', size=32)
 targets = read_pickle(y_path)
 y = np.array(targets['cat'])
 
@@ -81,13 +82,11 @@ def report(grid_scores, n_top=3):
 # specify parameters and distributions to sample from
 # randint takes a low and high val
 param_dist = {"max_depth": sp_randint(2, 11),
-              "max_features": uniform(loc=0.01, scale=0.05),
-              #"min_samples_split": sp_randint(1, 11),
-              #"min_samples_leaf": sp_randint(1, 11),
+              "max_features": uniform(loc=0.01, scale=0.5),
+              # "min_samples_split": sp_randint(1, 11),
+              # "min_samples_leaf": sp_randint(1, 11),
               "bootstrap": [True, False],
               "criterion": ["gini", "entropy"]}
-
-
 
 if __name__ == '__main__':
     # run randomized search

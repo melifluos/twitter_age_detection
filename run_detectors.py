@@ -23,25 +23,25 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 __author__ = 'benchamberlain'
 
 names = [
-    # "Nearest Neighbors",
+    "Nearest Neighbors",
     "Linear SVM",
-    # "RBF SVM",
-    # "Decision Tree",
-    "Random Forest"
-    # "AdaBoost",
-    # "Gradient Boosted Tree"
+    "RBF SVM",
+    "Decision Tree",
+    "Random Forest",
+    "AdaBoost",
+    "Gradient Boosted Tree"
 ]
 
 classifiers = [
-    # KNeighborsClassifier(3),
+    KNeighborsClassifier(3),
     SVC(kernel="linear", C=0.0073),
-    # SVC(gamma=2, C=1),
-    # DecisionTreeClassifier(max_depth=5),
+    SVC(gamma=2, C=1),
+    DecisionTreeClassifier(max_depth=5),
     # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
     # all of the cores are used
-    RandomForestClassifier(max_depth=5, n_estimators=20, criterion='entropy', max_features=0.038, n_jobs=-1)
-    # AdaBoostClassifier(),
-    # GradientBoostingClassifier(n_estimators=100)
+    RandomForestClassifier(max_depth=10, n_estimators=30, criterion='gini', max_features=0.038, n_jobs=-1),
+    AdaBoostClassifier(),
+    GradientBoostingClassifier(n_estimators=100)
 ]
 
 
@@ -90,12 +90,14 @@ def accuracy(y, pred):
 
 
 if __name__ == "__main__":
-    x_path = 'resources/X.p'
-    y_path = 'resources/y.p'
-    X = read_pickle(x_path)
+    x_path = 'resources/test/X.p'
+    y_path = 'resources/test/y.p'
+    X1 = read_pickle(x_path)
+    X2 = read_embedding('node2vec/emb/test.emd', size=64)
     targets = read_pickle(y_path)
     y = np.array(targets['cat'])
-    y_pred = run_detectors(X, y)
+    run_detectors(X1, y)
+    run_detectors(X2, y)
     #
     # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
     # print accuracy(y, y_pred)
