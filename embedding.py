@@ -3,9 +3,10 @@ Take a bipartite network and generate an embedding vector for each node using th
 TODO: adapt this to work for bipartite graphs
 """
 
-from utils import *
 from gensim.models import Word2Vec
-import node2vec
+
+from node2vec.src import node2vec
+from utils import *
 
 graph = read_pickle('resources/X.p')
 
