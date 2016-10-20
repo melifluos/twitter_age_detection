@@ -93,10 +93,12 @@ if __name__ == "__main__":
     x_path = 'resources/test/X.p'
     y_path = 'resources/test/y.p'
     X1 = read_pickle(x_path)
-    X2 = read_embedding('node2vec/emb/test.emd', size=64)
+    X2 = read_embedding('resources/test/test64.emd', size=64)
     targets = read_pickle(y_path)
     y = np.array(targets['cat'])
+    print 'without embedding'
     run_detectors(X1, y)
+    print 'with embedding'
     run_detectors(X2, y)
     #
     # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')

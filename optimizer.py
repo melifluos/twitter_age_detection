@@ -11,17 +11,12 @@ from ezplot import figure, show
 from pybo import solve_bayesopt
 from sklearn.neighbors import KNeighborsClassifier
 from run_detectors import *
-from utils import *
+import utils
 from sklearn.grid_search import GridSearchCV, RandomizedSearchCV
 from scipy.stats import randint as sp_randint
 from scipy.stats import uniform
 
-x_path = 'resources/test/X.p'
-y_path = 'resources/test/y.p'
-#X = read_pickle(x_path)
-X = read_embedding('node2vec/emb/test32.emd', size=32)
-targets = read_pickle(y_path)
-y = np.array(targets['cat'])
+
 
 
 def f1(x):
@@ -90,8 +85,14 @@ param_dist = {"max_depth": sp_randint(2, 11),
 
 if __name__ == '__main__':
     # run randomized search
+    x_path = 'resources/test/X.p'
+    y_path = 'resources/test/y.p'
+    X = read_pickle(x_path)
+    #X = read_embedding('resources/test/test32.emd', size=32)
+    targets = read_pickle(y_path)
+    y = np.array(targets['cat'])
     n_iter_search = 20
-    clf = RandomForestClassifier(n_estimators=20, n_jobs=-1)
+    clf = RandomForestClassifier(n_estimators=50, n_jobs=-1)
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
                                        n_iter=n_iter_search)
 

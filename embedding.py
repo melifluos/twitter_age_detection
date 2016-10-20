@@ -5,7 +5,7 @@ TODO: adapt this to work for bipartite graphs
 
 from gensim.models import Word2Vec
 import networkx as nx
-from ./node2vec import *
+import node2vec
 import age_detector
 from utils import *
 
