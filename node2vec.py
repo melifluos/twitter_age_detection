@@ -1,15 +1,20 @@
-"""
-The node2vec reference implementation from snap
-"""
+'''
+Reference implementation of node2vec.
 
+Author: Aditya Grover
 
+For more details, refer to the paper:
+node2vec: Scalable Feature Learning for Networks
+Aditya Grover and Jure Leskovec
+Knowledge Discovery and Data Mining (KDD), 2016
+'''
 
 import numpy as np
 import networkx as nx
 import random
 
 
-class Graph():
+class Graph:
     def __init__(self, nx_G, is_directed, p, q):
         self.G = nx_G
         self.is_directed = is_directed

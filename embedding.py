@@ -4,11 +4,12 @@ TODO: adapt this to work for bipartite graphs
 """
 
 from gensim.models import Word2Vec
-
-from node2vec.src import node2vec
+import networkx as nx
+from ./node2vec import *
+import age_detector
 from utils import *
 
-graph = read_pickle('resources/X.p')
+#graph = read_pickle('resources/X.p')
 
 
 def random_walk():
@@ -26,14 +27,14 @@ def build_sentences():
     pass
 
 
-def learn_embeddings(walks):
+def learn_embeddings(walks, size=64):
     '''
     Learn embeddings by optimizing the Skipgram objective using SGD.
     '''
     walks = [map(str, walk) for walk in walks]
-    model = Word2Vec(walks, size=32, window=10, min_count=0, sg=1, workers=4,
+    model = Word2Vec(walks, size=size, window=10, min_count=0, sg=1, workers=4,
                      iter=1)
-    model.save_word2vec_format('../emb/test32.emd')
+    model.save_word2vec_format('resources/test' + str(size) + '.emd')
 
     return
 
@@ -41,7 +42,7 @@ def main():
     '''
     Pipeline for representational learning for all nodes in a graph.
     '''
-    nx_G = nx.read_edgelist('../../resources/test/test.edgelist', nodetype=int, create_using=nx.DiGraph())
+    nx_G = nx.read_edgelist('resources/test/test.edgelist', nodetype=int, create_using=nx.DiGraph())
     for edge in nx_G.edges():
         nx_G[edge[0]][edge[1]]['weight'] = 1
     nx_G = nx_G.to_undirected()
@@ -53,4 +54,4 @@ def main():
 
 
 if __name__ == '__main__':
-    pass
+    main()
