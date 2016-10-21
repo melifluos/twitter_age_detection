@@ -44,8 +44,21 @@ classifiers = [
     GradientBoostingClassifier(n_estimators=100)
 ]
 
+classifiers_embedded_64 = [
+    KNeighborsClassifier(3),
+    SVC(kernel="linear", C=0.11),
+    SVC(gamma=2, C=1),
+    DecisionTreeClassifier(max_depth=5),
+    # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
+    # all of the cores are used
+    RandomForestClassifier(max_depth=18, n_estimators=30, criterion='entropy', bootstrap=False, max_features=0.01,
+                           n_jobs=-1),
+    AdaBoostClassifier(),
+    GradientBoostingClassifier(n_estimators=100)
+]
 
-def run_detectors(X, y):
+
+def run_detectors(X, y, classifiers):
     """
     Runs a detector on the age data and returns accuracy
     :param X: A scipy sparse feature matrix
@@ -93,13 +106,14 @@ if __name__ == "__main__":
     x_path = 'resources/test/X.p'
     y_path = 'resources/test/y.p'
     X1 = read_pickle(x_path)
+    print X1.shape
     X2 = read_embedding('resources/test/test64.emd', size=64)
     targets = read_pickle(y_path)
     y = np.array(targets['cat'])
     print 'without embedding'
-    run_detectors(X1, y)
+    run_detectors(X1, y, classifiers)
     print 'with embedding'
-    run_detectors(X2, y)
+    run_detectors(X2, y, classifiers_embedded)
     #
     # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
     # print accuracy(y, y_pred)

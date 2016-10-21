@@ -17,8 +17,6 @@ from scipy.stats import randint as sp_randint
 from scipy.stats import uniform
 
 
-
-
 def f1(x):
     """
     Test function that we will optimize. This is a simple sinusoidal function
@@ -39,14 +37,14 @@ def f2(x):
     return accuracy(y, pred)
 
 
-def main():
+def main(f):
     """Run the demo."""
     # grab a test function
     bounds = [0.001, 0.15]
     x = np.linspace(bounds[0], bounds[1], 500)
 
     # solve the model
-    xbest, model, info = solve_bayesopt(f2, bounds, niter=30, verbose=True)
+    xbest, model, info = solve_bayesopt(f, bounds, niter=30, verbose=True)
 
     # make some predictions
     # mu, s2 = model.predict(x[:, None])
@@ -76,7 +74,7 @@ def report(grid_scores, n_top=3):
 
 # specify parameters and distributions to sample from
 # randint takes a low and high val
-param_dist = {"max_depth": sp_randint(2, 11),
+param_dist = {"max_depth": sp_randint(2, 20),
               "max_features": uniform(loc=0.01, scale=0.5),
               # "min_samples_split": sp_randint(1, 11),
               # "min_samples_leaf": sp_randint(1, 11),
@@ -85,12 +83,14 @@ param_dist = {"max_depth": sp_randint(2, 11),
 
 if __name__ == '__main__':
     # run randomized search
+
     x_path = 'resources/test/X.p'
     y_path = 'resources/test/y.p'
-    X = read_pickle(x_path)
-    #X = read_embedding('resources/test/test32.emd', size=32)
+    # X = read_pickle(x_path)
+    X = read_embedding('resources/test/test64.emd', size=64)
     targets = read_pickle(y_path)
     y = np.array(targets['cat'])
+    main(f1)
     n_iter_search = 20
     clf = RandomForestClassifier(n_estimators=50, n_jobs=-1)
     random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
