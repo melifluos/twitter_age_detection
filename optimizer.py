@@ -11,9 +11,11 @@ from ezplot import figure, show
 from pybo import solve_bayesopt
 from sklearn.neighbors import KNeighborsClassifier
 from run_detectors import *
+import utils
 from sklearn.grid_search import GridSearchCV, RandomizedSearchCV
 from scipy.stats import randint as sp_randint
 from scipy.stats import uniform, expon
+
 
 x_path = 'resources/X.p'
 y_path = 'resources/y.p'
@@ -79,8 +81,8 @@ def report(grid_scores, n_top=3):
 
 # specify parameters and distributions to sample from
 # randint takes a low and high val
-param_dist = {"max_depth": sp_randint(2, 11),
-              "max_features": uniform(loc=0.01, scale=0.05),
+param_dist = {"max_depth": sp_randint(2, 20),
+              "max_features": uniform(loc=0.01, scale=0.5),
               # "min_samples_split": sp_randint(1, 11),
               # "min_samples_leaf": sp_randint(1, 11),
               "bootstrap": [True, False],
@@ -91,10 +93,17 @@ svm_param_dist = {'C': expon(scale=100), 'gamma': expon(scale=.1),
 
 if __name__ == '__main__':
     # run randomized search
+
+    x_path = 'resources/test/X.p'
+    y_path = 'resources/test/y.p'
+    # X = read_pickle(x_path)
+    X = read_embedding('resources/test/test64.emd', size=64)
+    targets = read_pickle(y_path)
+    y = np.array(targets['cat'])
+    main(f1)
     n_iter_search = 20
-    # clf = RandomForestClassifier(n_estimators=20, n_jobs=-1)
-    clf = SVC()
-    random_search = RandomizedSearchCV(clf, param_distributions=svm_param_dist,
+    clf = RandomForestClassifier(n_estimators=20, n_jobs=-1)
+    random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
                                        n_iter=n_iter_search)
 
     start = time()

@@ -80,7 +80,7 @@ def preprocess_data(path):
     """
     Reads a csv with columns fan_id star_id star_idx num_followers cat weight
     Removes duplicates and creates and produces data in standard machine learning format X,y
-    :param path:
+    :param path: path to the training data
     :return: sparse csc matrix X of [fan_idx,star_idx]
     :return: numpy array y of target categories
     """
@@ -144,10 +144,26 @@ def persist_data(folder, X, y):
     y.to_pickle(folder + '/y.p')
 
 
+def read_embedding(path, size):
+    """
+    Reads an embedding from text into a matrix
+    :param path: the location of the embedding file
+    :param size: the number of dimensions of the embedding eg. 64
+    :return:
+    """
+    data = pd.read_csv(path, header=None, index_col=0, skiprows=1, names=np.arange(size), sep=" ")
+    # hack as I haven't made this bipartite yet
+    data = data.sort_index()
+    data = data.loc[0:6449, :]
+    return data.as_matrix()
+
+
 def read_pickle(path):
     with open(path, 'rb') as infile:
         return pickle.load(infile)
 
 
 if __name__ == "__main__":
-    pass
+    X, y, edge_list = preprocess_data('resources/test.csv')
+    persist_edgelist(edge_list, 'resources/test/test.edgelist')
+    persist_data('resources/test', X, y)
