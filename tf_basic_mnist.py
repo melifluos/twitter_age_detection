@@ -3,6 +3,8 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+import numpy
+from utils import *
 
 # Import data
 from tensorflow.examples.tutorials.mnist import input_data
@@ -12,6 +14,21 @@ import tensorflow as tf
 __author__ = 'benchamberlain'
 
 FLAGS = None
+
+def read_data():
+    """
+    Read the Twitter user ages test data
+    :return:
+    """
+    x_path = 'resources/X.p'
+    y_path = 'resources/y.p'
+    X = read_pickle(x_path)
+    X, cols = remove_sparse_features(X, threshold=1)
+    features = np.array(X.todense())
+    targets = read_pickle(y_path)
+    y = np.array(targets['cat'])
+    y = tf.one_hot(y, depth=10)
+    return features, y
 
 
 def main(_):

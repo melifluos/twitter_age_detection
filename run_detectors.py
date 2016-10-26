@@ -91,7 +91,7 @@ if __name__ == "__main__":
     x_path = 'resources/X.p'
     y_path = 'resources/y.p'
     X = read_pickle(x_path)
-    #X, cols = remove_sparse_features(X, threshold=1)
+    X, cols = remove_sparse_features(X, threshold=1)
     targets = read_pickle(y_path)
     y = np.array(targets['cat'])
     y_pred = run_detectors(X, y)
