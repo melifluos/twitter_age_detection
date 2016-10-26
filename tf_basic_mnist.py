@@ -36,6 +36,7 @@ def main(_):
 
     # Create the model
     # Placeholders allow the DAG to be constructed in python. The second parameter is the shape
+    # NOT SURE WHY THESE ARE FLOATS WHEN THE DATA IS INTEGER - MAYBE TF ONLY WORKS WITH FLOATS??
     x = tf.placeholder(tf.float32, [None, 784])
     # in tensorflow params are usually read into variables
     W = tf.Variable(tf.zeros([784, 10]))
@@ -54,6 +55,7 @@ def main(_):
     #
     # So here we use tf.nn.softmax_cross_entropy_with_logits on the raw
     # outputs of 'y', and then average across the batch.
+    # reduce_mean just calculates the mean of a tensor (optionally along a given dimension)
     cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
     train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 
