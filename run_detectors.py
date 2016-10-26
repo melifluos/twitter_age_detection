@@ -7,8 +7,6 @@ from sklearn.feature_selection import SelectFromModel, chi2, SelectKBest, f_clas
 from sklearn import svm
 from utils import *
 from sklearn.cross_validation import KFold, StratifiedKFold
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 from sklearn.cross_validation import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.datasets import make_moons, make_circles, make_classification
@@ -39,7 +37,7 @@ classifiers = [
     # DecisionTreeClassifier(max_depth=5),
     # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
     # all of the cores are used
-    RandomForestClassifier(max_depth=5, n_estimators=20, criterion='entropy', max_features=0.038, n_jobs=-1)
+    RandomForestClassifier(max_depth=10, n_estimators=50, criterion='gini', max_features=0.038, n_jobs=-1)
     # AdaBoostClassifier(),
     # GradientBoostingClassifier(n_estimators=100)
 ]
@@ -93,6 +91,7 @@ if __name__ == "__main__":
     x_path = 'resources/X.p'
     y_path = 'resources/y.p'
     X = read_pickle(x_path)
+    #X, cols = remove_sparse_features(X, threshold=1)
     targets = read_pickle(y_path)
     y = np.array(targets['cat'])
     y_pred = run_detectors(X, y)

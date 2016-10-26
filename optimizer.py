@@ -13,8 +13,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from run_detectors import *
 from sklearn.grid_search import GridSearchCV, RandomizedSearchCV
 from scipy.stats import randint as sp_randint
-from scipy.stats import uniform
-
+from scipy.stats import uniform, expon
 
 x_path = 'resources/X.p'
 y_path = 'resources/y.p'
@@ -82,18 +81,20 @@ def report(grid_scores, n_top=3):
 # randint takes a low and high val
 param_dist = {"max_depth": sp_randint(2, 11),
               "max_features": uniform(loc=0.01, scale=0.05),
-              #"min_samples_split": sp_randint(1, 11),
-              #"min_samples_leaf": sp_randint(1, 11),
+              # "min_samples_split": sp_randint(1, 11),
+              # "min_samples_leaf": sp_randint(1, 11),
               "bootstrap": [True, False],
               "criterion": ["gini", "entropy"]}
 
-
+svm_param_dist = {'C': expon(scale=100), 'gamma': expon(scale=.1),
+                  'kernel': ['rbf'], 'class_weight': ['auto', None]}
 
 if __name__ == '__main__':
     # run randomized search
     n_iter_search = 20
-    clf = RandomForestClassifier(n_estimators=20, n_jobs=-1)
-    random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+    # clf = RandomForestClassifier(n_estimators=20, n_jobs=-1)
+    clf = SVC()
+    random_search = RandomizedSearchCV(clf, param_distributions=svm_param_dist,
                                        n_iter=n_iter_search)
 
     start = time()
