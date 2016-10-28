@@ -14,6 +14,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
@@ -21,6 +22,7 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 __author__ = 'benchamberlain'
 
 names = [
+    "Logistic Regression",
     # "Nearest Neighbors",
     "Linear SVM",
     # "RBF SVM",
@@ -31,6 +33,7 @@ names = [
 ]
 
 classifiers = [
+    LogisticRegression(multi_class='multinomial', solver='sag', n_jobs=-1, max_iter=1000),
     # KNeighborsClassifier(3),
     SVC(kernel="linear", C=0.0073),
     # SVC(gamma=2, C=1),
@@ -43,16 +46,17 @@ classifiers = [
 ]
 
 classifiers_embedded_64 = [
-    KNeighborsClassifier(3),
+    LogisticRegression(multi_class='multinomial', solver='sag', n_jobs=-1, max_iter=1000),
+    # KNeighborsClassifier(3),
     SVC(kernel="linear", C=0.11),
-    SVC(gamma=2, C=1),
-    DecisionTreeClassifier(max_depth=5),
+    # SVC(gamma=2, C=1),
+    # DecisionTreeClassifier(max_depth=5),
     # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
     # all of the cores are used
     RandomForestClassifier(max_depth=18, n_estimators=30, criterion='entropy', bootstrap=False, max_features=0.01,
                            n_jobs=-1),
-    AdaBoostClassifier(),
-    GradientBoostingClassifier(n_estimators=100)
+    # AdaBoostClassifier(),
+    # GradientBoostingClassifier(n_estimators=100)
 ]
 
 
@@ -104,7 +108,7 @@ if __name__ == "__main__":
     x_path = 'resources/X.p'
     y_path = 'resources/y.p'
     X = read_pickle(x_path)
-    X1, cols = remove_sparse_features(X, threshold=1)
+    X1, cols = remove_sparse_features(X, threshold=2)
     print X1.shape
     X2 = read_embedding('resources/test/test64.emd', size=64)
     targets = read_pickle(y_path)
@@ -112,7 +116,7 @@ if __name__ == "__main__":
     print 'without embedding'
     run_detectors(X1, y, classifiers)
     print 'with embedding'
-    run_detectors(X2, y, classifiers_embedded)
+    run_detectors(X2, y, classifiers_embedded_64)
     #
     # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
     # print accuracy(y, y_pred)
