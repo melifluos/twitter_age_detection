@@ -9,7 +9,8 @@ import node2vec
 import age_detector
 from utils import *
 
-#graph = read_pickle('resources/X.p')
+
+# graph = read_pickle('resources/X.p')
 
 
 def random_walk():
@@ -27,18 +28,19 @@ def build_sentences():
     pass
 
 
-def learn_embeddings(walks, size=64):
+def learn_embeddings(walks, size):
     '''
     Learn embeddings by optimizing the Skipgram objective using SGD.
     '''
     walks = [map(str, walk) for walk in walks]
     model = Word2Vec(walks, size=size, window=10, min_count=0, sg=1, workers=4,
                      iter=1)
-    model.save_word2vec_format('resources/test' + str(size) + '.emd')
+    model.save_word2vec_format('resources/test/test' + str(size) + '.emd')
 
     return
 
-def main():
+
+def main(size):
     '''
     Pipeline for representational learning for all nodes in a graph.
     '''
@@ -49,9 +51,8 @@ def main():
     G = node2vec.Graph(nx_G, False, 1, 1)
     G.preprocess_transition_probs()
     walks = G.simulate_walks(10, 80)
-    learn_embeddings(walks)
-
+    learn_embeddings(walks, size)
 
 
 if __name__ == '__main__':
-    main()
+    main(128)

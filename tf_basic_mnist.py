@@ -18,26 +18,30 @@ __author__ = 'benchamberlain'
 FLAGS = None
 
 
-class Train:
+class MLDate:
     def __init__(self):
         self.features = None
         self.target = None
 
+    def next_batch(self, batch_size):
+        """
+        sample a batch of data
+        """
+        n_data, _ = features.shape
+        idx = np.random.choice(n_data, batch_size)
+        target_batch = self.target.eval()[idx, :]
+        feature_batch = np.array(self.features[idx, :].todense())
+        return feature_batch, target_batch
 
-class Test:
-    def __init__(self):
-        self.features = None
-        self.target = None
 
-
-class MLdata(object):
+class MLdataset(object):
     """
     supervised ml data object
     """
 
     def __init__(self):
-        self.train = Train
-        self.test = Test
+        self.train = MLData
+        self.test = MLData
 
 
 def read_data(threshold):
@@ -75,7 +79,7 @@ def run_cv_pred(X, y, n_folds=3):
 
     # Iterate through folds
     for train_index, test_index in kf:
-        data = MLdata()
+        data = MLdataset()
         data.train.features, data.test.features = X[train_index], X[test_index]
         data.train.target, data.test.target = y[train_index], y[test_index]
 
@@ -106,6 +110,7 @@ def run_classifier(data, batch_size=100, n_iter=2000):
     cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
     # This returns a function that performs a single step of gradient descent through backprop
     train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+    # using an interactive session allows us to interleave building and running elements of the graph
     sess = tf.InteractiveSession()
     tf.initialize_all_variables().run()
     # Train
