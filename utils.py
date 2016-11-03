@@ -24,7 +24,7 @@ def remove_sparse_features(sparse_mat, threshold=100):
     """
     print 'input matrix of shape: {0}'.format(sparse_mat.shape)
     observations = np.array(sparse_mat.sum(axis=0)).flatten()
-    good_cols = np.where(observations > threshold)[0]
+    good_cols = np.where(observations >= threshold)[0]
     out_mat = sparse_mat[:, good_cols]
     print 'output matrix of shape: {0}'.format(out_mat.shape)
     return out_mat, good_cols
@@ -144,17 +144,19 @@ def persist_data(folder, X, y):
     y.to_pickle(folder + '/y.p')
 
 
-def read_embedding(path, size):
+def read_embedding(path, target, size):
     """
     Reads an embedding from text into a matrix
     :param path: the location of the embedding file
     :param size: the number of dimensions of the embedding eg. 64
+    :param target: the target variables containing the indices to use
     :return:
     """
     data = pd.read_csv(path, header=None, index_col=0, skiprows=1, names=np.arange(size), sep=" ")
     # hack as I haven't made this bipartite yet
-    data = data.sort_index()
-    data = data.loc[0:6449, :]
+    data = data.ix[target['fan_idx']]
+    # data = data.sort_index()
+    # data = data.loc[0:6449, :]
     return data.as_matrix()
 
 
