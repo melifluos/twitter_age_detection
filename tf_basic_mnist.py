@@ -4,44 +4,51 @@ from __future__ import print_function
 
 import argparse
 import numpy as np
-from utils import *
-from sklearn.preprocessing import OneHotEncoder
+import utils
 
 # Import data
 from tensorflow.examples.tutorials.mnist import input_data
 
 import tensorflow as tf
-from sklearn.cross_validation import KFold, StratifiedKFold
 
 __author__ = 'benchamberlain'
 
 FLAGS = None
 
 
-class MLDate:
-    def __init__(self):
-        self.features = None
-        self.target = None
-
-    def next_batch(self, batch_size):
-        """
-        sample a batch of data
-        """
-        n_data, _ = features.shape
-        idx = np.random.choice(n_data, batch_size)
-        target_batch = self.target.eval()[idx, :]
-        feature_batch = np.array(self.features[idx, :].todense())
-        return feature_batch, target_batch
-
-
-class MLdataset(object):
+class tf_model:
     """
-    supervised ml data object
+    wrapper for a tf model so it fits in a scikit-learn shaped hole
     """
 
-    def __init__(self):
-        self.train = MLData
-        self.test = MLData
+    def __init__(self, vars, train_step, session, batch_size, training_iters):
+        self.vars = vars
+        self.train_step = train_step
+        self.session = session
+        self.batch_size = batch_size
+        self.n_iter = training_iters
+
+    def fit(self, data):
+        """
+        fit the model
+        :param data is an MLDataset object
+        """
+        # need to one hot encode
+        data.train.target = tf.one_hot(data.train.target, depth=10, dtype=tf.float32)
+        # Train
+        for _ in range(self.n_iter):
+            # take a random sample of the data for batch gradient descent
+            x_slice, y_slice = data.train.next_batch(batch_size=self.batch_size)
+            self.session.run(train_step, feed_dict={self.vars['x']: x_slice, self.vars['y_']: y_slice})
+
+    def predict(self, data):
+        """
+        predict unseen test values
+        :param data is an MLDataset object
+        """
+        test_features = np.array(data.test.features.todense())
+        preds = self.session.run(tf.argmax(self.vars['y'], 1), feed_dict={self.vars['x']: test_features})
+        return preds
 
 
 def read_data(threshold):
@@ -50,12 +57,12 @@ def read_data(threshold):
     :param threshold: the minimum number of edges each
     :return:
     """
-    x_path = 'resources/X.p'
-    y_path = 'resources/y.p'
-    X = read_pickle(x_path)
-    features, cols = remove_sparse_features(X, threshold=threshold)
+    x_path = 'resources/test/X.p'
+    y_path = 'resources/test/y.p'
+    X = utils.read_pickle(x_path)
+    features, cols = utils.remove_sparse_features(X, threshold=threshold)
     # features = np.array(X.todense())
-    targets = read_pickle(y_path)
+    targets = utils.read_pickle(y_path)
     target = np.array(targets['cat'])
     unique, counts = np.unique(target, return_counts=True)
     total = float(sum(counts))
@@ -64,44 +71,16 @@ def read_data(threshold):
     return features, target
 
 
-def run_cv_pred(X, y, n_folds=3):
+def build_model(input_units, output_units):
     """
-    Run n-fold cross validation returning a prediction for every row of X
-    :param X: A scipy sparse feature matrix
-    :param y: The target labels corresponding to rows of X
-    :param clf: The
-    :param n_folds:
+    construct a tensor flow graph
+    :param input_units: the number of input units
+    :param output_units: the number of output units
     :return:
     """
-    # Construct a kfolds object
-    kf = StratifiedKFold(y, n_folds=n_folds)
-    y_pred = y.copy()
-
-    # Iterate through folds
-    for train_index, test_index in kf:
-        data = MLdataset()
-        data.train.features, data.test.features = X[train_index], X[test_index]
-        data.train.target, data.test.target = y[train_index], y[test_index]
-
-        # Initialize a classifier with key word arguments
-        preds = run_classifier(data, batch_size=100)
-        y_pred[test_index] = preds
-    return y_pred
-
-
-def run_classifier(data, batch_size=100, n_iter=2000):
-    """
-    Run the tensor flow multinomial logistic regression classifier
-    :param data: an MLdata object
-    :return:
-    """
-    n_data, n_features = data.train.features.shape
-    # need to onehotencode
-    data.train.target = tf.one_hot(data.train.target, depth=10, dtype=tf.float32)
-
-    x = tf.placeholder(tf.float32, [None, n_features])
-    W = tf.Variable(tf.zeros([n_features, 10]))
-    b = tf.Variable(tf.zeros([10]))
+    x = tf.placeholder(tf.float32, [None, input_units])
+    W = tf.Variable(tf.zeros([input_units, output_units]))
+    b = tf.Variable(tf.zeros([output_units]))
     y = tf.matmul(x, W) + b
 
     # Define loss and optimizer
@@ -110,21 +89,29 @@ def run_classifier(data, batch_size=100, n_iter=2000):
     cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
     # This returns a function that performs a single step of gradient descent through backprop
     train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
-    # using an interactive session allows us to interleave building and running elements of the graph
-    sess = tf.InteractiveSession()
-    tf.initialize_all_variables().run()
-    # Train
-    # tf.initialize_all_variables().run()
-    for _ in range(n_iter):
-        # take a random sample of the data for batch gradient descent
-        idx = np.random.choice(n_data, batch_size)
-        y_slice = data.train.target.eval()[idx, :]
-        x_slice = np.array(data.train.features[idx, :].todense())
-        sess.run(train_step, feed_dict={x: x_slice, y_: y_slice})
 
-    test_features = np.array(data.test.features.todense())
-    preds = sess.run(tf.argmax(y, 1), feed_dict={x: test_features})
-    return preds
+    vars = {'x': x, 'W': W, 'b': b, 'y': y, 'y_': y_}
+
+    return train_step, vars
+
+
+def fit(data, train_step, vars, session, batch_size=100, n_iter=2000):
+    """
+    Run the tensor flow multinomial logistic regression classifier
+    :param data: an MLdata object
+    :return:
+    """
+    pass
+
+
+def predict(vars, session, data):
+    """
+    Predict using the model defined in session
+    :param session: a tf interactive session
+    :param data: An MLdataset object
+    :return: the predictions for the current test features
+    """
+    pass
 
 
 def accuracy(y, pred):
@@ -174,7 +161,11 @@ def main():
 
 
 if __name__ == '__main__':
-    features, target = read_data(threshold=5)
-    y_pred = run_cv_pred(features, target, n_folds=2)
-    print(y_pred[0:20])
-    print(accuracy(target, y_pred))
+    X, y = read_data(threshold=5)
+    train_step, vars = build_model(X.shape[1], 10)
+    # using an interactive session allows us to interleave building and running elements of the graph
+    sess = tf.InteractiveSession()
+    tf.initialize_all_variables().run()
+    tf_model = tf_model(vars, train_step, sess, batch_size=100, training_iters=1000)
+    y_pred = utils.run_cv_pred(X, y, n_folds=2, model=tf_model)
+    utils.get_metrics(y, y_pred)

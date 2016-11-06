@@ -11,11 +11,74 @@ from scipy.sparse import lil_matrix
 import pandas as pd
 import cPickle as pickle
 import numpy as np
+from sklearn.metrics import f1_score
+from sklearn.cross_validation import StratifiedKFold
 
 __author__ = 'benchamberlain'
 
 
-def remove_sparse_features(sparse_mat, threshold=100):
+class MLData:
+    def __init__(self, features, target):
+        self.features = features
+        self.target = target
+
+    def next_batch(self, batch_size):
+        """
+        sample a batch of data
+        """
+        n_data, _ = self.features.shape
+        idx = np.random.choice(n_data, batch_size)
+        target_batch = self.target.eval()[idx, :]
+        feature_batch = np.array(self.features[idx, :].todense())
+        return feature_batch, target_batch
+
+
+class MLdataset(object):
+    """
+    supervised ml data object
+    """
+
+    def __init__(self, train, test):
+        self.train = train
+        self.test = test
+
+
+def get_metrics(y, pred):
+    print 'macro'
+    print f1_score(y, pred, average='macro')
+    print 'micro'
+    print f1_score(y, pred, average='micro')
+    print 'all'
+    print f1_score(y, pred, average=None)
+    # return sum(y == pred) / float(len(y))
+
+
+def run_cv_pred(X, y, n_folds, model, *args, **kwargs):
+    """
+    Run n-fold cross validation returning a prediction for every row of X
+    :param X: A scipy sparse feature matrix
+    :param y: The target labels corresponding to rows of X
+    :param clf: The
+    :param n_folds:
+    :return:
+    """
+    # Construct a kfolds object
+    kf = StratifiedKFold(y, n_folds=n_folds)
+    y_pred = np.zeros(shape=y.shape)
+
+    # Iterate through folds
+    for train_index, test_index in kf:
+        test = MLData(X[test_index], y[test_index])
+        train = MLData(X[train_index], y[train_index])
+        data = MLdataset(train, test)
+        # Initialize a classifier with key word arguments
+        model.fit(data)
+        preds = model.predict(data)
+        y_pred[test_index] = preds
+    return y_pred
+
+
+def remove_sparse_features(sparse_mat, threshold):
     """
     removes features (stars) with less than threshold observations in this data set
     :param X:

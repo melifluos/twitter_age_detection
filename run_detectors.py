@@ -18,7 +18,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-from sklearn.metrics import f1_score
 
 __author__ = 'benchamberlain'
 
@@ -112,17 +111,6 @@ def run_cv_pred(X, y, clf, n_folds=3):
             y_pred[test_index] = clf.predict(X_test.todense())
 
     return y_pred
-
-
-def get_metrics(y, pred):
-    print 'macro'
-    print f1_score(y, pred, average='macro')
-    print 'micro'
-    print f1_score(y, pred, average='micro')
-    print 'all'
-    print f1_score(y, pred, average=None)
-    #return sum(y == pred) / float(len(y))
-
 
 if __name__ == "__main__":
     x_path = 'resources/test/X.p'
