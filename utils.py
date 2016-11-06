@@ -63,6 +63,7 @@ def run_cv_pred(X, y, n_folds, model, *args, **kwargs):
     :return:
     """
     # Construct a kfolds object
+
     kf = StratifiedKFold(y, n_folds=n_folds)
     y_pred = np.zeros(shape=y.shape)
 
@@ -72,7 +73,9 @@ def run_cv_pred(X, y, n_folds, model, *args, **kwargs):
         train = MLData(X[train_index], y[train_index])
         data = MLdataset(train, test)
         # Initialize a classifier with key word arguments
+        print('t1')
         model.fit(data)
+        print('t2')
         preds = model.predict(data)
         y_pred[test_index] = preds
     return y_pred

@@ -29,7 +29,7 @@ class keras_model:
         x = data.train.features
         y = data.train.target
         target = one_hot(y)
-        model.fit(x, target, batch_size=self.batch_size, nb_epoch=self.epoch)
+        self.model.fit(x, target, batch_size=self.batch_size, nb_epoch=self.epoch)
 
     def predict(self, data):
         """
@@ -37,7 +37,7 @@ class keras_model:
         :param data is an MLDataset object
         """
         x = data.test.features
-        return model.predict_classes(x, self.batch_size)
+        return self.model.predict_classes(x, self.batch_size)
 
 
 def read_data(threshold):
@@ -95,15 +95,8 @@ if __name__ == '__main__':
     print X.shape
     print y.shape
     n_data, n_features = X.shape
-    # X_train = features[:6000, :]
-    # X_test = features[6000:, :]
-    # y_train = target[:6000, :]
-    # y_test = target[6000:, :]
     model = build_model(n_features)
     km = keras_model(model, batch_size=32, training_epochs=1)
-    # model.fit(X_train, y_train, batch_size=32, nb_epoch=3)
-    # loss_and_metrics = model.evaluate(X_test, y_test, batch_size=32)
-    # classes = model.predict_classes(X_test, batch_size=32)
     y_preds = utils.run_cv_pred(X, y, n_folds=2, model=km)
     print type(y_preds)
     print y_preds.shape
