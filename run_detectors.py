@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_selection import SelectFromModel, chi2, SelectKBest, f_classif, RFECV
 from sklearn import svm
-from utils import *
+import utils
 from sklearn.cross_validation import KFold, StratifiedKFold
 from sklearn.cross_validation import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -18,22 +18,45 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+import scipy.stats as stats
 
 __author__ = 'benchamberlain'
 
 names = [
-    "Logistic Regression",
-    # "Nearest Neighbors",
-    "Linear SVM",
-    "RBF SVM",
-    # "Decision Tree",
-    "Random Forest"
+    "Logistic_Regression",
+    # "Nearest_Neighbors",
+    "Linear_SVM",
+    "RBF_SVM",
+    # "Decision_Tree",
+    "Random_Forest"
     # "AdaBoost",
-    # "Gradient Boosted Tree"
+    # "Gradient_Boosted_Tree"
+]
+
+names64 = [
+    "Logistic_Regression64",
+    # "Nearest_Neighbors64",
+    "Linear_SVM64",
+    "RBF_SVM64",
+    # "Decision_Tree64",
+    "Random_Forest64"
+    # "AdaBoost64",
+    # "Gradient_Boosted_Tree64"
+]
+
+names128 = [
+    "Logistic_Regression128",
+    # "Nearest_Neighbors128",
+    "Linear_SVM128",
+    "RBF_SVM128",
+    # "Decision_Tree128",
+    "Random_Forest128"
+    # "AdaBoost128",
+    # "Gradient_Boosted_Tree128"
 ]
 
 classifiers = [
-    LogisticRegression(multi_class='multinomial', solver='sag', n_jobs=-1, max_iter=1000),
+    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=-1, max_iter=1000),
     # KNeighborsClassifier(3),
     SVC(kernel="linear", C=0.0073),
     SVC(kernel='rbf', gamma=0.011, C=9.0, class_weight='balanced'),
@@ -73,20 +96,24 @@ classifiers_embedded_128 = [
     # GradientBoostingClassifier(n_estimators=100)
 ]
 
-def run_detectors(X, y, classifiers):
+
+def run_detectors(X, y, names, classifiers, n_folds):
     """
     Runs a detector on the age data and returns accuracy
     :param X: A scipy sparse feature matrix
     :param y: The target labels corresponding to rows of X
     :return: The accuracy of the detector
     """
+    results = pd.DataFrame(np.zeros(shape=(len(names), n_folds)))
+    results.index = names
     for name, detector in zip(names, classifiers):
-        y_pred = run_cv_pred(X, y, detector)
+        y_pred, results = run_cv_pred(X, y, detector, n_folds, name, results)
         print name
-        get_metrics(y, y_pred)
+        utils.get_metrics(y, y_pred)
+    return results
 
 
-def run_cv_pred(X, y, clf, n_folds=3):
+def run_cv_pred(X, y, clf, n_folds, name, results):
     """
     Run n-fold cross validation returning a prediction for every row of X
     :param X: A scipy sparse feature matrix
@@ -100,34 +127,76 @@ def run_cv_pred(X, y, clf, n_folds=3):
     y_pred = y.copy()
 
     # Iterate through folds
-    for train_index, test_index in kf:
+    for idx, (train_index, test_index) in enumerate(kf):
         X_train, X_test = X[train_index], X[test_index]
         y_train = y[train_index]
         # Initialize a classifier with key word arguments
         clf.fit(X_train, y_train)
         try:  # Gradient boosted trees do not accept sparse matrices in the predict function currently
-            y_pred[test_index] = clf.predict(X_test)
+            preds = clf.predict(X_test)
         except TypeError:
-            y_pred[test_index] = clf.predict(X_test.todense())
+            preds = clf.predict(X_test.todense())
+        macro, micro = utils.get_metrics(preds, y[test_index])
+        results.loc[name, idx] = macro
+        y_pred[test_index] = preds
 
-    return y_pred
+    return y_pred, results
 
-if __name__ == "__main__":
+
+def read_data(threshold):
+    """
+    reads the features and target variables
+    :return:
+    """
     x_path = 'resources/test/X.p'
     y_path = 'resources/test/y.p'
-    X = read_pickle(x_path)
-    X1, cols = remove_sparse_features(X, threshold=2)
+    X = utils.read_pickle(x_path)
+    X1, cols = utils.remove_sparse_features(X, threshold=threshold)
     print X1.shape
-    targets = read_pickle(y_path)
-    X2 = read_embedding('resources/test/test64.emd', targets, size=64)
+    targets = utils.read_pickle(y_path)
+    X2 = utils.read_embedding('resources/test/test64.emd', targets, size=64)
     y = np.array(targets['cat'])
+    # X3 = utils.read_embedding('resources/test/test128.emd', targets, size=128)
+    X = [X1, X2]
+    return X, y
+
+
+def stats_test(results):
+    """
+    performs a 2 sided t-test to see if difference in models is significant
+    :param results:
+    :return:
+    """
+    results['mean'] = results.mean(axis=1)
+    results = results.sort('mean', ascending=False)
+
+    print '1 versus 2'
+    print(stats.ttest_ind(a=results.ix[0, 0:-1],
+                          b=results.ix[1, 0:-1],
+                          equal_var=False))
+    print '2 versus 3'
+    print(stats.ttest_ind(a=results.ix[1, 0:-1],
+                          b=results.ix[2, 0:-1],
+                          equal_var=False))
+
+    print '3 versus 4'
+    print(stats.ttest_ind(a=results.ix[1, 0:-1],
+                          b=results.ix[2, 0:-1],
+                          equal_var=False))
+
+
+if __name__ == "__main__":
+    X, y = read_data(5)
+    n_folds = 5
     print 'without embedding'
-    run_detectors(X1, y, classifiers)
+    results = run_detectors(X[0], y, names, classifiers, n_folds)
+    print results
     print 'with 64 embedding'
-    run_detectors(X2, y, classifiers_embedded_64)
+    results64 = run_detectors(X[1], y, names64, classifiers_embedded_64, n_folds)
     print 'with 128 embedding'
-    X3 = read_embedding('resources/test/test128.emd', targets, size=128)
-    run_detectors(X3, y, classifiers_embedded_128)
+    results128 = run_detectors(X[2], y, names128, classifiers_embedded_128, n_folds)
+    all_results = pd.concat([results, results64, results128])
+    stats_test(all_results)
     #
     # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
     # print accuracy(y, y_pred)

@@ -44,12 +44,19 @@ class MLdataset(object):
 
 
 def get_metrics(y, pred):
+    """
+    generate metrics to assess the detectors
+    :param y:
+    :param pred:
+    :return:
+    """
     print 'macro'
-    print f1_score(y, pred, average='macro')
+    macro_f1 = f1_score(y, pred, average='macro')
     print 'micro'
-    print f1_score(y, pred, average='micro')
+    micro_f1 = f1_score(y, pred, average='micro')
     print 'all'
     print f1_score(y, pred, average=None)
+    return macro_f1, micro_f1
     # return sum(y == pred) / float(len(y))
 
 
