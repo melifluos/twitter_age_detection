@@ -14,6 +14,7 @@ import numpy as np
 from sklearn.metrics import f1_score
 from sklearn.cross_validation import StratifiedKFold
 from scipy.io import loadmat
+import time
 
 __author__ = 'benchamberlain'
 
@@ -181,6 +182,25 @@ def preprocess_data(path):
     return X, y, edge_list
 
 
+def mat2edgelist(path):
+    """
+    convert from matlab matrix input types to the edgelist used by the node2vec implementation
+    :param mat: matlab matrix type
+    :return: pandas dataframe edgelist
+    """
+    X, _ = read_mat(path)
+    indices = X.nonzero()
+    data = np.zeros(shape=(len(indices[0]), 2))
+    # row vertex index
+    data[:, 0] = indices[0]
+    # column vertex index
+    data[:, 1] = indices[1]
+    df = pd.DataFrame(data=data, index=None, columns=['row', 'col'], dtype=int)
+    # every edge is counted twice, so only include cases where the row idx is less than the column index
+    df = df[df['row'] < df['col']]
+    return df
+
+
 def get_fan_idx_lookup():
     """
     Switch the fan_ids for indices - better for anonymity and making sparse matrics
@@ -250,7 +270,6 @@ def read_mat(path):
     return data['network'], data['group']
 
 
-
 def read_embedding(path, target, size):
     """
     Reads an embedding from text into a matrix
@@ -267,12 +286,21 @@ def read_embedding(path, target, size):
     return data.as_matrix()
 
 
+def get_timestamp():
+    """
+    get a string timestamp to put on files
+    :return:
+    """
+    return time.strftime("%Y%m%d-%H%M%S")
+
+
 def read_pickle(path):
     with open(path, 'rb') as infile:
         return pickle.load(infile)
 
 
 if __name__ == "__main__":
-    X, y, edge_list = preprocess_data('resources/test.csv')
-    persist_edgelist(edge_list, 'resources/test/test.edgelist')
-    persist_data('resources/test', X, y)
+    # X, y, edge_list = preprocess_data('resources/test.csv')
+    edge_list = mat2edgelist('resources/test/youtube/youtube.mat')
+    persist_edgelist(edge_list, 'resources/test/youtube/youtube.edgelist')
+    # persist_data('resources/test', X, y)

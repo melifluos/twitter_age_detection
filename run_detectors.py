@@ -200,6 +200,8 @@ if __name__ == "__main__":
     all_results = pd.concat([results, results64, results128])
     results = stats_test(all_results)
     print results
+    outpath = 'results/age/age_small_macro' + utils.get_timestamp() + '.csv'
+    results.to_csv(outpath)
     #
     # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
     # print accuracy(y, y_pred)
