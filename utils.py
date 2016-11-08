@@ -13,6 +13,7 @@ import cPickle as pickle
 import numpy as np
 from sklearn.metrics import f1_score
 from sklearn.cross_validation import StratifiedKFold
+from scipy.io import loadmat
 
 __author__ = 'benchamberlain'
 
@@ -43,19 +44,28 @@ class MLdataset(object):
         self.test = test
 
 
-def get_metrics(y, pred):
+def get_metrics(y, pred, verbose=True):
     """
     generate metrics to assess the detectors
     :param y:
     :param pred:
     :return:
     """
-    print 'macro'
+
     macro_f1 = f1_score(y, pred, average='macro')
+    print
     print 'micro'
     micro_f1 = f1_score(y, pred, average='micro')
     print 'all'
-    print f1_score(y, pred, average=None)
+    all_scores = f1_score(y, pred, average=None)
+    if verbose:
+        print 'macro'
+        print macro_f1
+        print 'micro'
+        print micro_f1
+        scores = np.zeros(shape=(1, len(all_scores)))
+        scores[0, :] = all_scores
+        print pd.DataFrame(data=scores, index=None, columns=np.arange(len(all_scores)))
     return macro_f1, micro_f1
     # return sum(y == pred) / float(len(y))
 
@@ -215,6 +225,30 @@ def persist_data(folder, X, y):
     """
     pickle_sparse(X, folder + '/X.p')
     y.to_pickle(folder + '/y.p')
+
+
+def persist_sparse_data(folder, X, y):
+    """
+    Write the scipy csc sparse matrix X and a pandas DF y to disk
+    :param path: the path to write data to
+    :param X: scipy sparse css feature matrix
+    :param y: pandas DF target values with columns [fan_idx, cat]
+    :return: None
+    """
+    pickle_sparse(X, folder + '/X.p')
+    pickle_sparse(y, folder + '/y.p')
+
+
+def read_mat(path):
+    """
+    Read the .mat files supplied here
+    http://leitang.net/social_dimension.html
+    :param path: the path to the files
+    :return: scipy sparse csc matrices X, y
+    """
+    data = loadmat(path)
+    return data['network'], data['group']
+
 
 
 def read_embedding(path, target, size):

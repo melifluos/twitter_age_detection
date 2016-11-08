@@ -69,7 +69,7 @@ classifiers = [
 ]
 
 classifiers_embedded_64 = [
-    LogisticRegression(multi_class='multinomial', solver='sag', n_jobs=-1, max_iter=1000),
+    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=-1, max_iter=1000),
     # KNeighborsClassifier(3),
     SVC(kernel="linear", C=0.11),
     SVC(kernel='rbf', gamma=0.018, C=31, class_weight='balanced'),
@@ -83,7 +83,7 @@ classifiers_embedded_64 = [
 ]
 
 classifiers_embedded_128 = [
-    LogisticRegression(multi_class='multinomial', solver='sag', n_jobs=-1, max_iter=1000),
+    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=-1, max_iter=1000),
     # KNeighborsClassifier(3),
     SVC(kernel="linear", C=0.11),
     SVC(kernel='rbf', gamma=0.029, C=27.4, class_weight='balanced'),
@@ -156,8 +156,8 @@ def read_data(threshold):
     targets = utils.read_pickle(y_path)
     X2 = utils.read_embedding('resources/test/test64.emd', targets, size=64)
     y = np.array(targets['cat'])
-    # X3 = utils.read_embedding('resources/test/test128.emd', targets, size=128)
-    X = [X1, X2]
+    X3 = utils.read_embedding('resources/test/test128.emd', targets, size=128)
+    X = [X1, X2, X3]
     return X, y
 
 
@@ -184,6 +184,8 @@ def stats_test(results):
                           b=results.ix[2, 0:-1],
                           equal_var=False))
 
+    return results
+
 
 if __name__ == "__main__":
     X, y = read_data(5)
@@ -196,7 +198,8 @@ if __name__ == "__main__":
     print 'with 128 embedding'
     results128 = run_detectors(X[2], y, names128, classifiers_embedded_128, n_folds)
     all_results = pd.concat([results, results64, results128])
-    stats_test(all_results)
+    results = stats_test(all_results)
+    print results
     #
     # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
     # print accuracy(y, y_pred)
