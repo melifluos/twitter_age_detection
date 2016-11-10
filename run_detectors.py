@@ -157,6 +157,7 @@ def read_data(threshold):
     X2 = utils.read_embedding('resources/test/test64.emd', targets, size=64)
     y = np.array(targets['cat'])
     X3 = utils.read_embedding('resources/test/test128.emd', targets, size=128)
+    # X3 = utils.read_embedding('resources/walks.emd', targets, size=64)
     X = [X1, X2, X3]
     return X, y
 

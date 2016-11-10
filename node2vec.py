@@ -12,14 +12,26 @@ Knowledge Discovery and Data Mining (KDD), 2016
 import numpy as np
 import networkx as nx
 import random
+import csv
+from sklearn.preprocessing import normalize
 
 
 class Graph:
-    def __init__(self, nx_G, is_directed, p, q):
+    def __init__(self, nx_G, is_directed, p, q, adj=None):
+        """
+
+        :param nx_G:
+        :param is_directed:
+        :param p:
+        :param q:
+        :param adj: A scipy sparse adjacency matrix
+        :return:
+        """
         self.G = nx_G
         self.is_directed = is_directed
         self.p = p
         self.q = q
+        self.adj = adj
 
     def node2vec_walk(self, walk_length, start_node):
         '''
@@ -47,6 +59,27 @@ class Graph:
 
         return walk
 
+    def output_walks(self, num_walks, walk_length, path):
+        """
+        write the random walks to file. This is necessary for large files where memory is overflowed
+        :param num_walks: the number of random walks commencing at each vertex
+        :param walk_length: the distance to walk
+        :param path: path of output file
+        :return: None
+        """
+        with open(path, 'wb') as f:
+            writer = csv.writer(f)
+            nodes = list(self.G.nodes())
+            print 'Walk iteration:'
+            for walk_iter in range(num_walks):
+                print str(walk_iter + 1), '/', str(num_walks)
+                random.shuffle(nodes)  # why is this necessary?
+                for count, node in enumerate(nodes):
+                    walk = self.node2vec_walk(walk_length=walk_length, start_node=node)
+                    writer.writerow(walk)
+                    if count % 1000 == 0:
+                        f.flush()
+
     def simulate_walks(self, num_walks, walk_length):
         '''
         Repeatedly simulate random walks from each node.
@@ -59,8 +92,8 @@ class Graph:
             print str(walk_iter + 1), '/', str(num_walks)
             random.shuffle(nodes)
             for node in nodes:
-                walks.append(self.node2vec_walk(walk_length=walk_length, start_node=node))
-
+                walk = self.node2vec_walk(walk_length=walk_length, start_node=node)
+                walks.append(walk)
         return walks
 
     def get_alias_edge(self, src, dst):
@@ -92,11 +125,24 @@ class Graph:
         is_directed = self.is_directed
 
         alias_nodes = {}
-        for node in G.nodes():
+        norm_consts = []
+        for idx, node in enumerate(G.nodes()):
             unnormalized_probs = [G[node][nbr]['weight'] for nbr in sorted(G.neighbors(node))]
             norm_const = sum(unnormalized_probs)
+            norm_consts.append(norm_const)
             normalized_probs = [float(u_prob) / norm_const for u_prob in unnormalized_probs]
             alias_nodes[node] = alias_setup(normalized_probs)
+
+        # deltas = []
+        # edge_counts = np.array(self.adj.sum(axis=1)).flatten()
+        # for i in range(len(edge_counts)):
+        #     if edge_counts[i] != norm_consts[i]:
+        #         deltas.append(edge_counts[i] - norm_consts[i])
+        # print len(deltas)
+        # print deltas
+        #
+        # adj_norm = normalize(self.adj, norm='l1', axis=1)
+
 
         alias_edges = {}
         triads = {}
