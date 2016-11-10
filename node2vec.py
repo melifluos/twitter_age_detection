@@ -66,6 +66,7 @@ class Graph:
         :param walk_length:
         :return:
         """
+        pass
 
 
     def output_walks(self, num_walks, walk_length, path):
