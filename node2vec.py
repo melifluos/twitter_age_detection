@@ -59,6 +59,15 @@ class Graph:
 
         return walk
 
+    def uniform_walk(self, walk_length):
+        """
+        simulate random walk starting at each node of length walk_length. This method assumes unweighted edges.
+        For weighted edges use node2vecwalk
+        :param walk_length:
+        :return:
+        """
+
+
     def output_walks(self, num_walks, walk_length, path):
         """
         write the random walks to file. This is necessary for large files where memory is overflowed
@@ -97,9 +106,13 @@ class Graph:
         return walks
 
     def get_alias_edge(self, src, dst):
-        '''
-        Get the alias edge setup lists for a given edge.
-        '''
+        """
+        Get the alias edge setup lists for a given edge. This is the only use of the parameters p and q.
+        It is called when initialising the alias table once for every edge
+        :param src the source vertex of this edge
+        :param dst the destination vertex of this edge
+        :Return
+        """
         G = self.G
         p = self.p
         q = self.q
@@ -153,6 +166,7 @@ class Graph:
         else:
             for edge in G.edges():
                 alias_edges[edge] = self.get_alias_edge(edge[0], edge[1])
+                # add edge in the other direction
                 alias_edges[(edge[1], edge[0])] = self.get_alias_edge(edge[1], edge[0])
 
         self.alias_nodes = alias_nodes
@@ -171,6 +185,8 @@ def alias_setup(probs):
     q = np.zeros(K)
     J = np.zeros(K, dtype=np.int)
 
+    # Sort the data into the outcomes with probabilities
+    # that are larger and smaller than 1/K.
     smaller = []
     larger = []
     for kk, prob in enumerate(probs):
@@ -180,8 +196,13 @@ def alias_setup(probs):
         else:
             larger.append(kk)
 
+    # Loop though and create little binary mixtures that
+    # appropriately allocate the larger outcomes over the
+    # overall uniform mixture.
     while len(smaller) > 0 and len(larger) > 0:
+        # get the index of a probability less than 1/K
         small = smaller.pop()
+        # get the index of a probability greater than 1/K
         large = larger.pop()
 
         J[small] = large
