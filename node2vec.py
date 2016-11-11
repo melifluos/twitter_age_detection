@@ -71,7 +71,7 @@ class Graph:
 
     def output_walks(self, num_walks, walk_length, path):
         """
-        write the random walks to file. This is necessary for large files where memory is overflowed
+        write the random walks to file. This is necessary for large files where memory overflows
         :param num_walks: the number of random walks commencing at each vertex
         :param walk_length: the distance to walk
         :param path: path of output file
@@ -143,7 +143,7 @@ class Graph:
         for idx, node in enumerate(G.nodes()):
             unnormalized_probs = [G[node][nbr]['weight'] for nbr in sorted(G.neighbors(node))]
             norm_const = sum(unnormalized_probs)
-            norm_consts.append(norm_const)
+            #norm_consts.append(norm_const)
             normalized_probs = [float(u_prob) / norm_const for u_prob in unnormalized_probs]
             alias_nodes[node] = alias_setup(normalized_probs)
 

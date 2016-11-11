@@ -31,7 +31,6 @@ def build_sentences():
     pass
 
 
-
 class WalkLines:
     """
     A class to pass to word2vec that lets lines be streamed from disk. Useful as largish graphs overflow memory
@@ -97,10 +96,8 @@ def main1(size, num_walks, walk_len, paths):
     G = node2vec.Graph(nx_G, False, 1, 1)
     print 'pre-processing transition probabilites'
     G.preprocess_transition_probs()
-    walks = G.simulate_walks(10, 80)
-    learn_embeddings_file(walks, size, paths[1])
-
-
+    G.output_walks(num_walks=num_walks, walk_length=walk_len, path=paths[2])
+    learn_embeddings_file(paths[2], size, paths[1])
 
 
 def read_data(threshold):
@@ -119,18 +116,16 @@ def read_data(threshold):
 if __name__ == '__main__':
 
     s = datetime.datetime.now()
-    inpaths = ['resources/test/blogcatalog/blogcatalog.edgelist', 'resources/test/flickr/flickr.edgelist',
-               'resources/test/youtube/youtube.edgelist']
-    outpaths = ['resources/test/blogcatalog/blogcatalog128.emd', 'resources/test/flickr/flickr128.emd',
-                'resources/test/youtube/youtube128.emd']
-    for paths in zip(inpaths, outpaths):
-        main(128, paths)
-    walkpaths = ['resources/test/blogcatalog/walks.csv', 'resources/test/flickr/walks.csv',
-                'resources/test/youtube/walks.csv']
+    inpaths = ['local_resources/blogcatalog/blogcatalog.edgelist', 'local_resources/flickr/flickr.edgelist',
+               'local_resources/youtube/youtube.edgelist']
+    outpaths = ['local_resources/blogcatalog/blogcatalog128.emd', 'local_resources/flickr/flickr128.emd',
+                'local_resources/youtube/youtube128.emd']
+    walkpaths = ['local_resources/blogcatalog/walks.csv', 'local_resources/flickr/walks.csv',
+                 'local_resources/youtube/walks.csv']
     for paths in zip(inpaths, outpaths, walkpaths):
         main1(size=128, num_walks=10, walk_len=80, paths=paths)
-    print 'ran in {0} s' .format(datetime.datetime.now() - s)
-    #import pandas as pd
+    print 'ran in {0} s'.format(datetime.datetime.now() - s)
+    # import pandas as pd
     # edge_list = pd.read_csv('resources/test/test.edgelist', names=['fan_idx', 'star_idx'], sep=' ', dtype=int)
     # X = utils.edge_list_to_sparse_mat(edge_list)
     # #X = read_data(threshold=0)
