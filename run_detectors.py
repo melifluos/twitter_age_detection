@@ -25,10 +25,10 @@ __author__ = 'benchamberlain'
 names = [
     "Logistic_Regression",
     # "Nearest_Neighbors",
-    "Linear_SVM",
-    "RBF_SVM",
+    # "Linear_SVM",
+    # "RBF_SVM",
     # "Decision_Tree",
-    "Random_Forest"
+    # "Random_Forest"
     # "AdaBoost",
     # "Gradient_Boosted_Tree"
 ]
@@ -36,10 +36,10 @@ names = [
 names64 = [
     "Logistic_Regression64",
     # "Nearest_Neighbors64",
-    "Linear_SVM64",
-    "RBF_SVM64",
+    # "Linear_SVM64",
+    # "RBF_SVM64",
     # "Decision_Tree64",
-    "Random_Forest64"
+    # "Random_Forest64"
     # "AdaBoost64",
     # "Gradient_Boosted_Tree64"
 ]
@@ -47,10 +47,10 @@ names64 = [
 names128 = [
     "Logistic_Regression128",
     # "Nearest_Neighbors128",
-    "Linear_SVM128",
-    "RBF_SVM128",
+    # "Linear_SVM128",
+    # "RBF_SVM128",
     # "Decision_Tree128",
-    "Random_Forest128"
+    # "Random_Forest128"
     # "AdaBoost128",
     # "Gradient_Boosted_Tree128"
 ]
@@ -58,12 +58,12 @@ names128 = [
 classifiers = [
     LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=-1, max_iter=1000),
     # KNeighborsClassifier(3),
-    SVC(kernel="linear", C=0.0073),
-    SVC(kernel='rbf', gamma=0.011, C=9.0, class_weight='balanced'),
+    # SVC(kernel="linear", C=0.0073),
+    # SVC(kernel='rbf', gamma=0.011, C=9.0, class_weight='balanced'),
     # DecisionTreeClassifier(max_depth=5),
     # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
     # all of the cores are used
-    RandomForestClassifier(max_depth=18, n_estimators=50, criterion='gini', max_features=0.46, n_jobs=-1)
+    # RandomForestClassifier(max_depth=18, n_estimators=50, criterion='gini', max_features=0.46, n_jobs=-1)
     # AdaBoostClassifier(),
     # GradientBoostingClassifier(n_estimators=100)
 ]
@@ -71,13 +71,12 @@ classifiers = [
 classifiers_embedded_64 = [
     LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=-1, max_iter=1000),
     # KNeighborsClassifier(3),
-    SVC(kernel="linear", C=0.11),
-    SVC(kernel='rbf', gamma=0.018, C=31, class_weight='balanced'),
+    # SVC(kernel="linear", C=0.11),
+    # SVC(kernel='rbf', gamma=0.018, C=31, class_weight='balanced'),
     # DecisionTreeClassifier(max_depth=5),
     # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
     # all of the cores are used
-    RandomForestClassifier(max_depth=6, n_estimators=50, criterion='entropy', bootstrap=False, max_features=0.21,
-                           n_jobs=-1),
+    # RandomForestClassifier(max_depth=6, n_estimators=50, criterion='entropy', bootstrap=False, max_features=0.21,n_jobs=-1),
     # AdaBoostClassifier(),
     # GradientBoostingClassifier(n_estimators=100)
 ]
