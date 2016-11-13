@@ -286,6 +286,25 @@ def read_embedding(path, target, size):
     return data.as_matrix()
 
 
+def read_public_embedding(path, size):
+    """
+    Read the public data sets embeddings files
+    :param path:
+    :param size:
+    :return:
+    """
+    data = pd.read_csv(path, header=None, index_col=0, skiprows=1, names=np.arange(size), sep=" ")
+    return data.as_matrix()
+
+def not_hot(X):
+    """
+    Take a one hot encoded vector and make it a 1d dense integer vector
+    :param X: A sparse one hot encoded matrix
+    :return: a 1d numpy array
+    """
+    return X.nonzero()[1]
+
+
 def get_timestamp():
     """
     get a string timestamp to put on files
