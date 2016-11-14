@@ -142,7 +142,7 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     return y_pred, results
 
 
-def read_data(threshold):
+def read_data(threshold, size):
     """
     reads the features and target variables
     :return:
@@ -153,9 +153,9 @@ def read_data(threshold):
     X1, cols = utils.remove_sparse_features(X, threshold=threshold)
     print X1.shape
     targets = utils.read_pickle(y_path)
-    X2 = utils.read_embedding('local_resources/roberto_embeddings/user.factors.200.01reg.200iter', targets, size=200)
+    X2 = utils.read_embedding('local_resources/roberto_embeddings/item.factors.200.01reg.200iter', targets, size=size)
     y = np.array(targets['cat'])
-    X3 = utils.read_embedding('local_resources/roberto_embeddings/user.factors.200.001reg.200iter', targets, size=200)
+    X3 = utils.read_embedding('local_resources/roberto_embeddings/item.factors.200.001reg.200iter', targets, size=size)
     # X3 = utils.read_embedding('resources/walks.emd', targets, size=64)
     X = [X1, X2, X3]
     return X, y
@@ -188,7 +188,8 @@ def stats_test(results):
 
 
 if __name__ == "__main__":
-    X, y = read_data(5)
+    size = 201
+    X, y = read_data(5, size)
     print X[0].shape
     print y.shape
     n_folds = 5
@@ -204,7 +205,7 @@ if __name__ == "__main__":
     all_results = pd.concat([results, results64, results128])
     results = stats_test(all_results)
     print results
-    outpath = 'results/roberto_emd/test' + utils.get_timestamp() + '.csv'
+    outpath = 'results/roberto_emd/age_large' + utils.get_timestamp() + '.csv'
     results.to_csv(outpath, index=False)
     #
     # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')

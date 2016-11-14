@@ -278,11 +278,9 @@ def read_embedding(path, target, size):
     :param target: the target variables containing the indices to use
     :return:
     """
-    data = pd.read_csv(path, header=None, index_col=0, skiprows=1, names=np.arange(size), sep=" ")
+    data = pd.read_csv(path, header=None, index_col=0, skiprows=0, names=np.arange(size), sep=" ")
     # hack as I haven't made this bipartite yet
     data = data.ix[target['fan_idx']]
-    # data = data.sort_index()
-    # data = data.loc[0:6449, :]
     return data.as_matrix()
 
 
