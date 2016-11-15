@@ -261,8 +261,8 @@ if __name__ == "__main__":
     print 'micro', results[1]
     macro_path = 'results/roberto_emd/age_large_macro' + utils.get_timestamp() + '.csv'
     micro_path = 'results/roberto_emd/age_large_micro' + utils.get_timestamp() + '.csv'
-    results[0].to_csv(macro_path, index=False)
-    results[1].to_csv(micro_path, index=False)  # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)  # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
     # print accuracy(y, y_pred)
     #
     # unique, counts = np.unique(y_pred, return_counts=True)
