@@ -103,8 +103,9 @@ def run_detectors(X, y, names, classifiers, n_folds):
     :param y: The target labels corresponding to rows of X
     :return: The accuracy of the detector
     """
-    results = pd.DataFrame(np.zeros(shape=(len(names), n_folds)))
-    results.index = names
+    temp = pd.DataFrame(np.zeros(shape=(len(names), n_folds)))
+    temp.index = names
+    results = (temp, temp.copy())
     for name, detector in zip(names, classifiers):
         y_pred, results = run_cv_pred(X, y, detector, n_folds, name, results)
         print name
@@ -136,7 +137,8 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
         except TypeError:
             preds = clf.predict(X_test.todense())
         macro, micro = utils.get_metrics(preds, y[test_index])
-        results.loc[name, idx] = macro
+        results[0].loc[name, idx] = macro
+        results[1].loc[name, idx] = micro
         y_pred[test_index] = preds
 
     return y_pred, results
@@ -149,66 +151,118 @@ def read_data(threshold, size):
     """
     x_path = 'resources/test/X_large.p'
     y_path = 'resources/test/y_large.p'
+    targets = utils.read_pickle(y_path)
+    y = np.array(targets['cat'])
     X = utils.read_pickle(x_path)
     X1, cols = utils.remove_sparse_features(X, threshold=threshold)
     print X1.shape
-    targets = utils.read_pickle(y_path)
     X2 = utils.read_embedding('local_resources/roberto_embeddings/item.factors.200.01reg.200iter', targets, size=size)
-    y = np.array(targets['cat'])
     X3 = utils.read_embedding('local_resources/roberto_embeddings/item.factors.200.001reg.200iter', targets, size=size)
     # X3 = utils.read_embedding('resources/walks.emd', targets, size=64)
     X = [X1, X2, X3]
     return X, y
 
 
-def stats_test(results):
+def read_target(path):
+    targets = utils.read_pickle(path)
+    y = np.array(targets['cat'])
+    return y
+
+
+def stats_test(results_tuple):
     """
     performs a 2 sided t-test to see if difference in models is significant
     :param results:
     :return:
     """
-    results['mean'] = results.mean(axis=1)
-    results = results.sort('mean', ascending=False)
+    output = []
+    for idx, results in enumerate(results_tuple):
+        results['mean'] = results.mean(axis=1)
+        results = results.sort('mean', ascending=False)
 
-    print '1 versus 2'
-    print(stats.ttest_ind(a=results.ix[0, 0:-1],
-                          b=results.ix[1, 0:-1],
-                          equal_var=False))
-    print '2 versus 3'
-    print(stats.ttest_ind(a=results.ix[1, 0:-1],
-                          b=results.ix[2, 0:-1],
-                          equal_var=False))
+        print '1 versus 2'
+        print(stats.ttest_ind(a=results.ix[0, 0:-1],
+                              b=results.ix[1, 0:-1],
+                              equal_var=False))
+        print '2 versus 3'
+        print(stats.ttest_ind(a=results.ix[1, 0:-1],
+                              b=results.ix[2, 0:-1],
+                              equal_var=False))
 
-    print '3 versus 4'
-    print(stats.ttest_ind(a=results.ix[1, 0:-1],
-                          b=results.ix[2, 0:-1],
-                          equal_var=False))
+        print '3 versus 4'
+        print(stats.ttest_ind(a=results.ix[1, 0:-1],
+                              b=results.ix[2, 0:-1],
+                              equal_var=False))
+        output.append(results)
 
+    return output
+
+
+def read_embeddings(paths, sizes):
+    y_path = 'resources/test/y_large.p'
+    targets = utils.read_pickle(y_path)
+    y = np.array(targets['cat'])
+    all_data = []
+    for elem in zip(paths, sizes):
+        data = utils.read_embedding(elem[0], targets, size=elem[1])
+        all_data.append(data)
+    return all_data, y
+
+
+def merge_results(results_list):
+    macro = pd.concat([x[0] for x in results_list])
+    micro = pd.concat([x[1] for x in results_list])
+    return macro, micro
+
+
+def run_all_datasets(datasets, y, names, classifiers, n_folds):
+    results = []
+    for data in zip(datasets, names):
+        temp = run_detectors(data[0], y, data[1], classifiers, n_folds)
+        results.append(temp)
     return results
 
 
 if __name__ == "__main__":
-    size = 201
-    X, y = read_data(5, size)
-    print X[0].shape
-    print y.shape
+    # size = 201
+    # X, y = read_data(5, size)
+    # print X[0].shape
+    # print y.shape
+    # n_folds = 5
+    # print 'without embedding'
+    # results = run_detectors(X[0], y, names, classifiers, n_folds)
+    # print results
+    # # print 'with 64 embedding'
+    # print 'their one'
+    # results64 = run_detectors(X[1], y, names64, classifiers_embedded_128, n_folds)
+    # # print 'with 128 embedding'
+    # print 'our one'
+    # results128 = run_detectors(X[2], y, names128, classifiers_embedded_128, n_folds)
+    # all_results = merge_results([results, results64, results128])
+
+    paths = ['local_resources/roberto_embeddings/item.factors.200.01reg.200iter',
+             'local_resources/roberto_embeddings/item.factors.200.001reg.200iter',
+             'local_resources/roberto_embeddings/item.factors.200.0001reg.200iter',
+             'local_resources/roberto_embeddings/item.factors.200.00001reg.200iter',
+             'local_resources/roberto_embeddings/item.factors.200.noreg.200iter']
+
+    names = [['logistic_01reg.200iter'],
+             ['logistic_001reg.200iter'],
+             ['logistic_0001reg.200iter'],
+             ['logistic_00001reg.200iter'],
+             ['logistic_noreg.200iter']]
+    sizes = [201, 201, 201, 201, 200]
+    X, y = read_embeddings(paths, sizes)
     n_folds = 5
-    print 'without embedding'
-    results = run_detectors(X[0], y, names, classifiers, n_folds)
-    print results
-    # print 'with 64 embedding'
-    print 'their one'
-    results64 = run_detectors(X[1], y, names64, classifiers_embedded_128, n_folds)
-    # print 'with 128 embedding'
-    print 'our one'
-    results128 = run_detectors(X[2], y, names128, classifiers_embedded_128, n_folds)
-    all_results = pd.concat([results, results64, results128])
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = merge_results(results)
     results = stats_test(all_results)
-    print results
-    outpath = 'results/roberto_emd/age_large' + utils.get_timestamp() + '.csv'
-    results.to_csv(outpath, index=False)
-    #
-    # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/roberto_emd/age_large_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/roberto_emd/age_large_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=False)
+    results[1].to_csv(micro_path, index=False)  # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
     # print accuracy(y, y_pred)
     #
     # unique, counts = np.unique(y_pred, return_counts=True)
