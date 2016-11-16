@@ -53,7 +53,7 @@ def learn_embeddings(walks, size, outpath):
     walks = [map(str, walk) for walk in walks]
 
     model = Word2Vec(walks, size=size, window=10, min_count=0, sg=1, workers=4,
-                     iter=1)
+                     iter=5)
     model.save_word2vec_format(outpath)
 
 
@@ -64,8 +64,20 @@ def learn_embeddings_file(inpath, size, outpath):
     walks = WalkLines(inpath)
 
     model = Word2Vec(walks, size=size, window=10, min_count=0, sg=1, workers=4,
-                     iter=1)
+                     iter=5)
     model.save_word2vec_format(outpath)
+
+
+def output_walks(walks, path):
+    """
+    write the walks to a csv file
+    :param walks: A list of walks. Each walk is a list of ints
+    :return:
+    """
+    with open(path, 'wb') as f:
+        writer = csv.writer(f)
+        for walk in walks:
+            writer.writerow(walk)
 
 
 def main(size, num_walks, walk_len, paths):
@@ -79,6 +91,7 @@ def main(size, num_walks, walk_len, paths):
     G = node2vec.Graph(nx_G, False, 1, 1)
     G.preprocess_transition_probs()
     walks = G.simulate_walks(num_walks=num_walks, walk_length=walk_len)
+    output_walks(walks, paths[2])
     learn_embeddings(walks, size, paths[1])
 
 
@@ -112,25 +125,29 @@ def read_data(threshold):
     print X1.shape
     return X1
 
-
-if __name__ == '__main__':
-
-    s = datetime.datetime.now()
-    inpaths = ['local_resources/blogcatalog/blogcatalog.edgelist', 'local_resources/flickr/flickr.edgelist',
-               'local_resources/youtube/youtube.edgelist']
+def scenario_generate_public_embeddings(size=128):
+    inpaths = ['local_resources/blogcatalog/X.p', 'local_resources/flickr/X.p',
+               'local_resources/youtube/X.p']
     outpaths = ['local_resources/blogcatalog/blogcatalog128.emd', 'local_resources/flickr/flickr128.emd',
                 'local_resources/youtube/youtube128.emd']
     walkpaths = ['local_resources/blogcatalog/walks.csv', 'local_resources/flickr/walks.csv',
                  'local_resources/youtube/walks.csv']
     for paths in zip(inpaths, outpaths, walkpaths):
-        main1(size=128, num_walks=10, walk_len=80, paths=paths)
+        main(size=size, num_walks=10, walk_len=80, paths=paths)
+
+
+
+if __name__ == '__main__':
+    s = datetime.datetime.now()
+    scenario_generate_public_embeddings(128)
     print 'ran in {0} s'.format(datetime.datetime.now() - s)
-    # import pandas as pd
-    # edge_list = pd.read_csv('resources/test/test.edgelist', names=['fan_idx', 'star_idx'], sep=' ', dtype=int)
-    # X = utils.edge_list_to_sparse_mat(edge_list)
-    # #X = read_data(threshold=0)
-    # paths = ['resources/test/test.edgelist', ' ', 'resources/test/walks.csv']
-    # s = datetime.datetime.now()
-    # main1(64, 1, 10, paths, X)
-    # # learn_embeddings_file('resources/walks.csv', 64, 'resources/walks.emd')
-    # print 'ran in {0} s'.format(datetime.datetime.now() - s)
+
+    import pandas as pd
+    edge_list = pd.read_csv('resources/test/test.edgelist', names=['fan_idx', 'star_idx'], sep=' ', dtype=int)
+    X = utils.edge_list_to_sparse_mat(edge_list)
+    # X = read_data(threshold=0)
+    paths = ['resources/test/test.edgelist', 'resources/test/test1281.emd', 'resources/test/walks1.csv']
+    s = datetime.datetime.now()
+    main(128, 10, 80, paths)
+    # learn_embeddings_file('resources/walks.csv', 64, 'resources/walks.emd')
+    print 'ran in {0} s'.format(datetime.datetime.now() - s)

@@ -7,6 +7,7 @@ from datetime import datetime
 import utils
 import pandas as pd
 from gensim.models import Word2Vec
+from scipy.sparse import csr_matrix
 
 __author__ = 'benchamberlain'
 
@@ -106,8 +107,8 @@ class BipartiteGraph:
 
         walks = self.initialise_walk_array(num_walks, walk_length)
 
-        for walk_idx in xrange(0, walk_length - 2, 2):
-            # get the degree of the vertices we're starting from
+        for walk_idx in xrange(0, walk_length, 2):
+            # get the vertices we're starting from
             current_vertices = walks[:, walk_idx]
             # get the indices of the next vertices. This is the random bit
             next_vertex_indices = self.sample_next_vertices(current_vertices, row_degs)
@@ -116,7 +117,7 @@ class BipartiteGraph:
             walks[:, walk_idx + 1] = next_vertices + self.n_rows
             # get the indices of the next vertices. This is the random bit
             next_vertex_indices = self.sample_next_vertices(next_vertices, col_degs)
-            walks[:, walk_idx + 2] = col_edges[current_vertices, next_vertex_indices]
+            walks[:, walk_idx + 2] = col_edges[next_vertices, next_vertex_indices]
         # little hack to make the right length walk
         return walks[:, :-1]
 
@@ -150,9 +151,26 @@ def read_data(threshold):
     return X1
 
 
-if __name__ == '__main__':
+def scenario_debug():
+    x = csr_matrix(np.array([[0, 1, 0, 1, 0],
+                             [0, 0, 1, 1, 0],
+                             [0, 1, 0, 1, 1],
+                             [1, 1, 1, 0, 0],
+                             [0, 0, 0, 1, 1]]))
     print 'reading data'
-    x = read_data(0)
+    s = datetime.now()
+    # x = csr_matrix(np.array([[0, 1], [1, 0]]))
+    g = BipartiteGraph(x)
+    print 'building edges'
+    g.build_edge_array()
+    print 'generating walks'
+    walks = g.generate_walks(1, 4)
+    print datetime.now() - s, ' s'
+    print walks.shape
+
+def scenario_generate_small_age_embedding():
+    print 'reading data'
+    x = read_data(1)
     s = datetime.now()
     # x = csr_matrix(np.array([[0, 1], [1, 0]]))
     g = BipartiteGraph(x)
@@ -165,3 +183,7 @@ if __name__ == '__main__':
     print walks.shape
     df = pd.DataFrame(walks)
     df.to_csv('resources/test/walks2.csv', index=False, header=None)
+
+
+if __name__ == '__main__':
+    scenario_generate_small_age_embedding()

@@ -99,7 +99,6 @@ class Graph:
         model.save_word2vec_format(outpath)
 
 
-
 def read_data(threshold):
     """
     reads the features and target variables
@@ -113,7 +112,7 @@ def read_data(threshold):
     return X1
 
 
-if __name__ == '__main__':
+def scenario_build_small_age_embedding():
     print 'reading data'
     x = read_data(0)
     s = datetime.now()
@@ -128,3 +127,31 @@ if __name__ == '__main__':
     print walks.shape
     df = pd.DataFrame(walks)
     df.to_csv('resources/test/walks2.csv', index=False, header=None)
+
+
+def scenario_generate_public_embeddings(size=128):
+    inpaths = ['local_resources/blogcatalog/X.p', 'local_resources/flickr/X.p',
+               'local_resources/youtube/X.p']
+    outpaths = ['local_resources/blogcatalog/blogcatalog128.emd', 'local_resources/flickr/flickr128.emd',
+                'local_resources/youtube/youtube128.emd']
+    walkpaths = ['local_resources/blogcatalog/walks.csv', 'local_resources/flickr/walks.csv',
+                 'local_resources/youtube/walks.csv']
+
+    for paths in zip(inpaths, outpaths, walkpaths):
+        print 'reading data'
+        x = utils.read_pickle(paths[0])
+        g = Graph(x)
+        print 'building edges'
+        g.build_edge_array()
+        print 'generating walks'
+        walks = g.generate_walks(10, 80)
+        g.learn_embeddings(walks, size, paths[1])
+        print walks.shape
+        df = pd.DataFrame(walks)
+        df.to_csv(paths[2], index=False, header=None)
+
+
+if __name__ == '__main__':
+    s = datetime.now()
+    scenario_generate_public_embeddings(size=128)
+    print datetime.now() - s, ' s'

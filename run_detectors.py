@@ -61,8 +61,6 @@ classifiers = [
     # SVC(kernel="linear", C=0.0073),
     # SVC(kernel='rbf', gamma=0.011, C=9.0, class_weight='balanced'),
     # DecisionTreeClassifier(max_depth=5),
-    # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
-    # all of the cores are used
     # RandomForestClassifier(max_depth=18, n_estimators=50, criterion='gini', max_features=0.46, n_jobs=-1)
     # AdaBoostClassifier(),
     # GradientBoostingClassifier(n_estimators=100)
@@ -74,8 +72,6 @@ classifiers_embedded_64 = [
     # SVC(kernel="linear", C=0.11),
     # SVC(kernel='rbf', gamma=0.018, C=31, class_weight='balanced'),
     # DecisionTreeClassifier(max_depth=5),
-    # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
-    # all of the cores are used
     # RandomForestClassifier(max_depth=6, n_estimators=50, criterion='entropy', bootstrap=False, max_features=0.21,n_jobs=-1),
     # AdaBoostClassifier(),
     # GradientBoostingClassifier(n_estimators=100)
@@ -184,23 +180,29 @@ def stats_test(results_tuple):
         print(stats.ttest_ind(a=results.ix[0, 0:-1],
                               b=results.ix[1, 0:-1],
                               equal_var=False))
-        print '2 versus 3'
-        print(stats.ttest_ind(a=results.ix[1, 0:-1],
-                              b=results.ix[2, 0:-1],
-                              equal_var=False))
+        try:
+            print '2 versus 3'
+            print(stats.ttest_ind(a=results.ix[1, 0:-1],
+                                  b=results.ix[2, 0:-1],
+                                  equal_var=False))
+        except IndexError:
+            pass
 
-        print '3 versus 4'
-        print(stats.ttest_ind(a=results.ix[1, 0:-1],
-                              b=results.ix[2, 0:-1],
-                              equal_var=False))
+        try:
+            print '3 versus 4'
+            print(stats.ttest_ind(a=results.ix[1, 0:-1],
+                                  b=results.ix[2, 0:-1],
+                                  equal_var=False))
+        except IndexError:
+            pass
+
         output.append(results)
 
     return output
 
 
-def read_embeddings(paths, sizes):
-    y_path = 'resources/test/y_large.p'
-    targets = utils.read_pickle(y_path)
+def read_embeddings(paths, target_path, sizes):
+    targets = utils.read_pickle(target_path)
     y = np.array(targets['cat'])
     all_data = []
     for elem in zip(paths, sizes):
@@ -223,23 +225,7 @@ def run_all_datasets(datasets, y, names, classifiers, n_folds):
     return results
 
 
-if __name__ == "__main__":
-    # size = 201
-    # X, y = read_data(5, size)
-    # print X[0].shape
-    # print y.shape
-    # n_folds = 5
-    # print 'without embedding'
-    # results = run_detectors(X[0], y, names, classifiers, n_folds)
-    # print results
-    # # print 'with 64 embedding'
-    # print 'their one'
-    # results64 = run_detectors(X[1], y, names64, classifiers_embedded_128, n_folds)
-    # # print 'with 128 embedding'
-    # print 'our one'
-    # results128 = run_detectors(X[2], y, names128, classifiers_embedded_128, n_folds)
-    # all_results = merge_results([results, results64, results128])
-
+def roberto_scenario():
     paths = ['local_resources/roberto_embeddings/item.factors.200.01reg.200iter',
              'local_resources/roberto_embeddings/item.factors.200.001reg.200iter',
              'local_resources/roberto_embeddings/item.factors.200.0001reg.200iter',
@@ -251,8 +237,11 @@ if __name__ == "__main__":
              ['logistic_0001reg.200iter'],
              ['logistic_00001reg.200iter'],
              ['logistic_noreg.200iter']]
+
+    y_path = 'resources/test/y_large.p'
+
     sizes = [201, 201, 201, 201, 200]
-    X, y = read_embeddings(paths, sizes)
+    X, y = read_embeddings(paths, y_path, sizes)
     n_folds = 5
     results = run_all_datasets(X, y, names, classifiers, n_folds)
     all_results = merge_results(results)
@@ -262,8 +251,52 @@ if __name__ == "__main__":
     macro_path = 'results/roberto_emd/age_large_macro' + utils.get_timestamp() + '.csv'
     micro_path = 'results/roberto_emd/age_large_micro' + utils.get_timestamp() + '.csv'
     results[0].to_csv(macro_path, index=True)
-    results[1].to_csv(micro_path, index=True)  # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
-    # print accuracy(y, y_pred)
-    #
-    # unique, counts = np.unique(y_pred, return_counts=True)
-    # print np.asarray((unique, counts)).T
+    results[1].to_csv(micro_path, index=True)
+
+
+def bipartite_scenario():
+    paths = ['resources/test/test1281.emd', 'resources/test/test1282.emd']
+
+    names = [['logistic_theirs'],
+             ['logistic_mine']]
+
+    y_path = 'resources/test/y.p'
+
+    sizes = [128, 128]
+    X, y = read_embeddings(paths, y_path, sizes)
+    n_folds = 5
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = merge_results(results)
+    results = stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/age_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/age_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+if __name__ == "__main__":
+
+    bipartite_scenario()
+
+# size = 201
+# X, y = read_data(5, size)
+# print X[0].shape
+# print y.shape
+# n_folds = 5
+# print 'without embedding'
+# results = run_detectors(X[0], y, names, classifiers, n_folds)
+# print results
+# # print 'with 64 embedding'
+# print 'their one'
+# results64 = run_detectors(X[1], y, names64, classifiers_embedded_128, n_folds)
+# # print 'with 128 embedding'
+# print 'our one'
+# results128 = run_detectors(X[2], y, names128, classifiers_embedded_128, n_folds)
+# all_results = merge_results([results, results64, results128])
+
+# np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
+# print accuracy(y, y_pred)
+#
+# unique, counts = np.unique(y_pred, return_counts=True)
+# print np.asarray((unique, counts)).T
