@@ -83,7 +83,9 @@ class BipartiteGraph:
         :return:
         """
         initial_vertices = np.arange(self.n_rows)
-        walks = np.zeros(shape=(self.n_rows * num_walks, walk_length), dtype=int)
+        # Add an extra column, which gets trimmed off later, but needed as the walk
+        # is taking 2 steps at a time
+        walks = np.zeros(shape=(self.n_rows * num_walks, walk_length + 1), dtype=int)
         walks[:, 0] = np.tile(initial_vertices, num_walks)
         return walks
 
@@ -94,18 +96,29 @@ class BipartiteGraph:
         :param walk_length the length of each walk
         :return:
         """
-        assert self.deg.min() > 0
-        degs = np.tile(self.deg, num_walks)
-        edges = np.tile(self.edges, (num_walks, 1))
+        assert walk_length % 2 == 0
+        assert self.row_deg.min() > 0
+        row_degs = np.tile(self.row_deg, num_walks)
+        row_edges = np.tile(self.row_edges, (num_walks, 1))
+        assert self.col_deg.min() > 0
+        col_degs = np.tile(self.col_deg, num_walks)
+        col_edges = np.tile(self.col_edges, (num_walks, 1))
+
         walks = self.initialise_walk_array(num_walks, walk_length)
 
-        for walk_idx in range(walk_length - 1):
+        for walk_idx in xrange(0, walk_length - 2, 2):
             # get the degree of the vertices we're starting from
             current_vertices = walks[:, walk_idx]
             # get the indices of the next vertices. This is the random bit
-            next_vertex_indices = self.sample_next_vertices(current_vertices, degs)
-            walks[:, walk_idx + 1] = edges[current_vertices, next_vertex_indices]
-        return walks
+            next_vertex_indices = self.sample_next_vertices(current_vertices, row_degs)
+            next_vertices = row_edges[current_vertices, next_vertex_indices]
+            # store distinct vertex indices for the columns by adding the max index for the rows
+            walks[:, walk_idx + 1] = next_vertices + self.n_rows
+            # get the indices of the next vertices. This is the random bit
+            next_vertex_indices = self.sample_next_vertices(next_vertices, col_degs)
+            walks[:, walk_idx + 2] = col_edges[current_vertices, next_vertex_indices]
+        # little hack to make the right length walk
+        return walks[:, :-1]
 
     def learn_embeddings(self, walks, size, outpath):
         """
@@ -122,3 +135,33 @@ class BipartiteGraph:
         model = Word2Vec(walk_list, size=size, window=10, min_count=0, sg=1, workers=4,
                          iter=5)
         model.save_word2vec_format(outpath)
+
+
+def read_data(threshold):
+    """
+    reads the features and target variables
+    :return:
+    """
+    x_path = 'resources/test/X.p'
+    y_path = 'resources/test/y.p'
+    X = utils.read_pickle(x_path)
+    X1, cols = utils.remove_sparse_features(X, threshold=threshold)
+    print X1.shape
+    return X1
+
+
+if __name__ == '__main__':
+    print 'reading data'
+    x = read_data(0)
+    s = datetime.now()
+    # x = csr_matrix(np.array([[0, 1], [1, 0]]))
+    g = BipartiteGraph(x)
+    print 'building edges'
+    g.build_edge_array()
+    print 'generating walks'
+    walks = g.generate_walks(10, 80)
+    g.learn_embeddings(walks, 128, 'resources/test/test1282.emd')
+    print datetime.now() - s, ' s'
+    print walks.shape
+    df = pd.DataFrame(walks)
+    df.to_csv('resources/test/walks2.csv', index=False, header=None)
