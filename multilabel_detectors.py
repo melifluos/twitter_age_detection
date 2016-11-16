@@ -197,7 +197,7 @@ if __name__ == "__main__":
     target_path = 'local_resources/blogcatalog/y.p'
     feature_path = 'local_resources/blogcatalog/X.p'
     embedding_paths = ['local_resources/blogcatalog/blogcatalog128.emd',
-                       'local_resources/blogcatalog/blogcatalog1281.emd']
+                       'local_resources/blogcatalog/blogcatalog1282.emd']
     X, y = read_data(target_path, feature_path, embedding_paths)
     print X[0].shape
     print y.shape
