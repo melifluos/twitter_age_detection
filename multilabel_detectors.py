@@ -19,13 +19,14 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, Gradien
 from sklearn.linear_model import LogisticRegression
 import multilabel_evaluation as mle
 import scipy.stats as stats
+import datetime
 
 __author__ = 'benchamberlain'
 
 names = [
     "Logistic_Regression",
     # "Nearest_Neighbors",
-    # "Linear_SVM",
+    "Linear_SVM",
     # "RBF_SVM",
     # "Decision_Tree",
     # "Random_Forest"
@@ -47,7 +48,7 @@ names64 = [
 names128 = [
     "Logistic_Regression128",
     # "Nearest_Neighbors128",
-    # "Linear_SVM128",
+    "Linear_SVM128",
     # "RBF_SVM128",
     # "Decision_Tree128",
     # "Random_Forest128"
@@ -56,9 +57,9 @@ names128 = [
 ]
 
 classifiers = [
-    OneVsRestClassifier(LogisticRegression(multi_class='ovr', solver='lbfgs', n_jobs=-1, max_iter=1000)),
+    OneVsRestClassifier(LogisticRegression(multi_class='ovr', solver='lbfgs', n_jobs=1, max_iter=1000), n_jobs=1),
     # KNeighborsClassifier(3),
-    # OneVsRestClassifier(SVC(kernel="linear", C=0.0073, probability=True)),
+    OneVsRestClassifier(SVC(kernel="linear", C=0.0073, probability=True)),
     # SVC(kernel='rbf', gamma=0.011, C=9.0, class_weight='balanced'),
     # DecisionTreeClassifier(max_depth=5),
     # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
@@ -69,7 +70,7 @@ classifiers = [
 ]
 
 classifiers_embedded_64 = [
-    OneVsRestClassifier(LogisticRegression(multi_class='ovr', solver='lbfgs', n_jobs=-1, max_iter=1000)),
+    OneVsRestClassifier(LogisticRegression(multi_class='ovr', solver='lbfgs', n_jobs=1, max_iter=1000), n_jobs=1),
     # KNeighborsClassifier(3),
     # OneVsRestClassifier(SVC(kernel="linear", C=0.11, probability=True)),
     # SVC(kernel='rbf', gamma=0.018, C=31, class_weight='balanced'),
@@ -82,9 +83,9 @@ classifiers_embedded_64 = [
 ]
 
 classifiers_embedded_128 = [
-    OneVsRestClassifier(LogisticRegression(multi_class='ovr', solver='lbfgs', n_jobs=-1, max_iter=1000)),
+    OneVsRestClassifier(LogisticRegression(multi_class='ovr', solver='lbfgs', n_jobs=1, max_iter=1000), n_jobs=1),
     # KNeighborsClassifier(3),
-    # OneVsRestClassifier(SVC(kernel="linear", C=0.11, probability=True)),
+    OneVsRestClassifier(SVC(kernel="linear", C=0.11, probability=True)),
     # SVC(kernel='rbf', gamma=0.029, C=27.4, class_weight='balanced'),
     # DecisionTreeClassifier(max_depth=5),
     # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
@@ -105,8 +106,9 @@ def run_detectors(X, y, names, classifiers, n_folds):
     :param n_folds: the number of splits of the data to make
     :return: The accuracy of the detector
     """
-    results = pd.DataFrame(np.zeros(shape=(len(names), n_folds)))
-    results.index = names
+    temp = pd.DataFrame(np.zeros(shape=(len(names), n_folds)))
+    temp.index = names
+    results = (temp, temp.copy())
     for name, detector in zip(names, classifiers):
         print name
         results = run_cv_pred(X, y, detector, n_folds, name, results)
@@ -138,7 +140,8 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
             probs = clf.predict_proba(X_test.todense())
         macro, micro = mle.evaluate(probs, y[test_index])
         print 'macro F1, micro F1', macro, micro
-        results.loc[name, idx] = macro
+        results[0].loc[name, idx] = macro
+        results[1].loc[name, idx] = micro
         # y_pred[test_index] = preds
 
     return results
@@ -164,6 +167,23 @@ def read_data(target_path, feature_path, embedding_paths):
     # df['sums'] = sums
     # df.to_csv('local_resources/blogcatalog/ytest.csv', index=False, header=None)
     return X, y
+
+
+def run_all_datasets(datasets, y, names, classifiers, n_folds):
+    """
+    Loop through a list of datasets running potentially numerous classifiers on each
+    :param datasets:
+    :param y:
+    :param names:
+    :param classifiers:
+    :param n_folds:
+    :return: A tuple of pandas DataFrames for each dataset containing (macroF1, microF1)
+    """
+    results = []
+    for data in zip(datasets, names, classifiers):
+        temp = run_detectors(data[0], y, data[1], data[2], n_folds)
+        results.append(temp)
+    return results
 
 
 def stats_test(results):
@@ -192,30 +212,49 @@ def stats_test(results):
     return results
 
 
-if __name__ == "__main__":
-    # X, y = read_data(5)
+def blogcatalog_scenario():
     target_path = 'local_resources/blogcatalog/y.p'
     feature_path = 'local_resources/blogcatalog/X.p'
-    embedding_paths = ['local_resources/blogcatalog/blogcatalog128.emd',
-                       'local_resources/blogcatalog/blogcatalog1282.emd']
+    embedding_paths = ['local_resources/blogcatalog/blogcatalog128.emd']
+    classifier_names = [names, names128]
+    detectors = [classifiers,
+                 classifiers_embedded_128]
     X, y = read_data(target_path, feature_path, embedding_paths)
-    print X[0].shape
-    print y.shape
-    n_folds = 2
-    print 'without embedding'
-    results = run_detectors(X[0], y, names, classifiers, n_folds)
-    print results
-    # print 'with 64 embedding'
-    print 'their one'
-    results64 = run_detectors(X[1], y, names64, classifiers_embedded_128, n_folds)
-    # print 'with 128 embedding'
-    print 'our one'
-    results128 = run_detectors(X[2], y, names128, classifiers_embedded_128, n_folds)
-    all_results = pd.concat([results, results64, results128])
-    results = stats_test(all_results)
-    print results
-    outpath = 'results/blogcatalog/blogcatalog' + utils.get_timestamp() + '.csv'
-    results.to_csv(outpath, index=False)
+    n_folds = 5
+    results = run_all_datasets(X, y, classifier_names, detectors, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/blogcatalog/macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/blogcatalog/micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+    # print 'without embedding'
+    # results = run_detectors(X[0], y, names, classifiers, n_folds)
+    # # print results
+    # # print 'with 64 embedding'
+    # print 'with embedding'
+    # # y = y[0:100, :]
+    # # X1 = X[1][0:100, :]
+    # results64 = run_detectors(X[1], y, names64, classifiers_embedded_128, n_folds)
+    # # print 'with 128 embedding'
+    # # print 'our one'
+    # # results128 = run_detectors(X[2], y, names128, classifiers_embedded_128, n_folds)
+    # all_results = pd.concat([results, results64])
+    # results = stats_test(all_results)
+    # print results
+    # outpath = 'results/blogcatalog/debug_test' + utils.get_timestamp() + '.csv'
+    # results.to_csv(outpath, index=True)
+
+
+if __name__ == "__main__":
+    s = datetime.datetime.now()
+    blogcatalog_scenario()
+    print datetime.datetime.now() - s
+    # X, y = read_data(5)
+
     #
     # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
     # print accuracy(y, y_pred)

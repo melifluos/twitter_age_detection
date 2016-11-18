@@ -18,7 +18,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-import scipy.stats as stats
 
 __author__ = 'benchamberlain'
 
@@ -159,46 +158,21 @@ def read_data(threshold, size):
     return X, y
 
 
-def read_target(path):
-    targets = utils.read_pickle(path)
-    y = np.array(targets['cat'])
-    return y
-
-
-def stats_test(results_tuple):
+def run_all_datasets(datasets, y, names, classifiers, n_folds):
     """
-    performs a 2 sided t-test to see if difference in models is significant
-    :param results:
-    :return:
+    Loop through a list of datasets running potentially numerous classifiers on each
+    :param datasets:
+    :param y:
+    :param names:
+    :param classifiers:
+    :param n_folds:
+    :return: A tuple of pandas DataFrames for each dataset containing (macroF1, microF1)
     """
-    output = []
-    for idx, results in enumerate(results_tuple):
-        results['mean'] = results.mean(axis=1)
-        results = results.sort('mean', ascending=False)
-
-        print '1 versus 2'
-        print(stats.ttest_ind(a=results.ix[0, 0:-1],
-                              b=results.ix[1, 0:-1],
-                              equal_var=False))
-        try:
-            print '2 versus 3'
-            print(stats.ttest_ind(a=results.ix[1, 0:-1],
-                                  b=results.ix[2, 0:-1],
-                                  equal_var=False))
-        except IndexError:
-            pass
-
-        try:
-            print '3 versus 4'
-            print(stats.ttest_ind(a=results.ix[1, 0:-1],
-                                  b=results.ix[2, 0:-1],
-                                  equal_var=False))
-        except IndexError:
-            pass
-
-        output.append(results)
-
-    return output
+    results = []
+    for data in zip(datasets, names):
+        temp = run_detectors(data[0], y, data[1], classifiers, n_folds)
+        results.append(temp)
+    return results
 
 
 def read_embeddings(paths, target_path, sizes):
@@ -206,23 +180,9 @@ def read_embeddings(paths, target_path, sizes):
     y = np.array(targets['cat'])
     all_data = []
     for elem in zip(paths, sizes):
-        data = utils.read_embedding(elem[0], targets, size=elem[1])
+        data = utils.read_roberto_embedding(elem[0], targets, size=elem[1])
         all_data.append(data)
     return all_data, y
-
-
-def merge_results(results_list):
-    macro = pd.concat([x[0] for x in results_list])
-    micro = pd.concat([x[1] for x in results_list])
-    return macro, micro
-
-
-def run_all_datasets(datasets, y, names, classifiers, n_folds):
-    results = []
-    for data in zip(datasets, names):
-        temp = run_detectors(data[0], y, data[1], classifiers, n_folds)
-        results.append(temp)
-    return results
 
 
 def roberto_scenario():
@@ -243,9 +203,9 @@ def roberto_scenario():
     sizes = [201, 201, 201, 201, 200]
     X, y = read_embeddings(paths, y_path, sizes)
     n_folds = 5
-    results = run_all_datasets(X, y, names, classifiers, n_folds)
-    all_results = merge_results(results)
-    results = stats_test(all_results)
+    results = utils.run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
     print 'macro', results[0]
     print 'micro', results[1]
     macro_path = 'results/roberto_emd/age_large_macro' + utils.get_timestamp() + '.csv'
@@ -255,7 +215,7 @@ def roberto_scenario():
 
 
 def bipartite_scenario():
-    paths = ['resources/test/test1281.emd', 'resources/test/test1282.emd']
+    paths = ['resources/test/test128.emd', 'resources/test/test1282.emd']
 
     names = [['logistic_theirs'],
              ['logistic_mine']]
@@ -265,9 +225,9 @@ def bipartite_scenario():
     sizes = [128, 128]
     X, y = read_embeddings(paths, y_path, sizes)
     n_folds = 5
-    results = run_all_datasets(X, y, names, classifiers, n_folds)
-    all_results = merge_results(results)
-    results = stats_test(all_results)
+    results = utils.run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
     print 'macro', results[0]
     print 'micro', results[1]
     macro_path = 'results/age/age_macro' + utils.get_timestamp() + '.csv'
@@ -275,8 +235,29 @@ def bipartite_scenario():
     results[0].to_csv(macro_path, index=True)
     results[1].to_csv(micro_path, index=True)
 
-if __name__ == "__main__":
 
+def blogcatalog_scenario():
+    paths = ['local_resources/blogcatalog/X.p']
+
+    names = [['logistic']]
+
+    y_path = 'local_resources/blogcatalog/y.p'
+
+    sizes = [128]
+    X, y = read_data(paths, y_path, sizes)
+    n_folds = 5
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/blogcatalog/debug_test_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/blogcatalog/debug_test_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+if __name__ == "__main__":
     bipartite_scenario()
 
 # size = 201

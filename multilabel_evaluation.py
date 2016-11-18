@@ -100,11 +100,11 @@ def evaluate(probs, y):
 
     # calculate F1 scores from the two matrices
     macro_res = precision_recall_fscore_support(y, predictions, average='macro')
-    for elem in macro_res:
-        print elem
+    # for elem in macro_res:
+    #     print elem
     micro_res = precision_recall_fscore_support(y, predictions, average='micro')
-    for elem in micro_res:
-        print elem
+    # for elem in micro_res:
+    #     print elem
     # macro, micro = multilabel_F1(y, predictions)
 
     return macro_res[2], micro_res[2]

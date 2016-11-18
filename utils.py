@@ -15,6 +15,7 @@ from sklearn.metrics import f1_score
 from sklearn.cross_validation import StratifiedKFold
 from scipy.io import loadmat
 import time
+import scipy.stats as stats
 
 __author__ = 'benchamberlain'
 
@@ -270,7 +271,7 @@ def read_mat(path):
     return data['network'], data['group']
 
 
-def read_embedding(path, target, size):
+def read_roberto_embedding(path, target, size):
     """
     Reads an embedding from text into a matrix
     :param path: the location of the embedding file
@@ -279,7 +280,21 @@ def read_embedding(path, target, size):
     :return:
     """
     data = pd.read_csv(path, header=None, index_col=0, skiprows=0, names=np.arange(size), sep=" ")
-    # hack as I haven't made this bipartite yet
+    # make sure the features are in the same order as the targets
+    data = data.ix[target['fan_idx']]
+    return data.as_matrix()
+
+
+def read_embedding(path, target, size):
+    """
+    Reads an embedding from text into a matrix
+    :param path: the location of the embedding file
+    :param size: the number of dimensions of the embedding eg. 64
+    :param target: the target variables containing the indices to use
+    :return:
+    """
+    data = pd.read_csv(path, header=None, index_col=0, skiprows=1, names=np.arange(size), sep=" ")
+    # make sure the features are in the same order as the targets
     data = data.ix[target['fan_idx']]
     return data.as_matrix()
 
@@ -292,7 +307,10 @@ def read_public_embedding(path, size):
     :return:
     """
     data = pd.read_csv(path, header=None, index_col=0, skiprows=1, names=np.arange(size), sep=" ")
+    # make sure the features are in the same order as the targets
+    data = data.sort_index(ascending=True)
     return data.as_matrix()
+
 
 def not_hot(X):
     """
@@ -301,6 +319,19 @@ def not_hot(X):
     :return: a 1d numpy array
     """
     return X.nonzero()[1]
+
+
+def read_data(x_path, y_path, threshold):
+    """
+    reads the features and target variables
+    :return:
+    """
+    targets = read_pickle(y_path)
+    y = np.array(targets['cat'])
+    X = read_pickle(x_path)
+    X1, cols = remove_sparse_features(X, threshold=threshold)
+    print X1.shape
+    return X1, y
 
 
 def get_timestamp():
@@ -314,6 +345,59 @@ def get_timestamp():
 def read_pickle(path):
     with open(path, 'rb') as infile:
         return pickle.load(infile)
+
+
+def read_target(path):
+    targets = utils.read_pickle(path)
+    y = np.array(targets['cat'])
+    return y
+
+
+def stats_test(results_tuple):
+    """
+    performs a 2 sided t-test to see if difference in models is significant
+    :param results:
+    :return:
+    """
+    output = []
+    for idx, results in enumerate(results_tuple):
+        results['mean'] = results.mean(axis=1)
+        results = results.sort('mean', ascending=False)
+
+        print '1 versus 2'
+        print(stats.ttest_ind(a=results.ix[0, 0:-1],
+                              b=results.ix[1, 0:-1],
+                              equal_var=False))
+        try:
+            print '2 versus 3'
+            print(stats.ttest_ind(a=results.ix[1, 0:-1],
+                                  b=results.ix[2, 0:-1],
+                                  equal_var=False))
+        except IndexError:
+            pass
+
+        try:
+            print '3 versus 4'
+            print(stats.ttest_ind(a=results.ix[1, 0:-1],
+                                  b=results.ix[2, 0:-1],
+                                  equal_var=False))
+        except IndexError:
+            pass
+
+        output.append(results)
+
+    return output
+
+
+def merge_results(results_list):
+    """
+    Take a list of results tuples (macro and micro) and merge into a single tuple
+    :param results_list:
+    :return: A tuple containing two pandas DataFrames (macro_results, micro_results)
+    """
+    macro = pd.concat([x[0] for x in results_list])
+    micro = pd.concat([x[1] for x in results_list])
+    return macro, micro
 
 
 if __name__ == "__main__":

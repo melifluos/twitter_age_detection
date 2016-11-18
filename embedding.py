@@ -8,7 +8,7 @@ import networkx as nx
 import node2vec
 import age_detector
 import utils
-import gensim
+# import gensim
 import csv
 import datetime
 
@@ -125,6 +125,7 @@ def read_data(threshold):
     print X1.shape
     return X1
 
+
 def scenario_generate_public_embeddings(size=128):
     inpaths = ['local_resources/blogcatalog/X.p', 'local_resources/flickr/X.p',
                'local_resources/youtube/X.p']
@@ -136,12 +137,7 @@ def scenario_generate_public_embeddings(size=128):
         main(size=size, num_walks=10, walk_len=80, paths=paths)
 
 
-
-if __name__ == '__main__':
-    s = datetime.datetime.now()
-    scenario_generate_public_embeddings(128)
-    print 'ran in {0} s'.format(datetime.datetime.now() - s)
-
+def scenario_generate_small_age_detection_embedding():
     import pandas as pd
     edge_list = pd.read_csv('resources/test/test.edgelist', names=['fan_idx', 'star_idx'], sep=' ', dtype=int)
     X = utils.edge_list_to_sparse_mat(edge_list)
@@ -150,4 +146,10 @@ if __name__ == '__main__':
     s = datetime.datetime.now()
     main(128, 10, 80, paths)
     # learn_embeddings_file('resources/walks.csv', 64, 'resources/walks.emd')
+    print 'ran in {0} s'.format(datetime.datetime.now() - s)
+
+
+if __name__ == '__main__':
+    s = datetime.datetime.now()
+    scenario_generate_public_embeddings(128)
     print 'ran in {0} s'.format(datetime.datetime.now() - s)
