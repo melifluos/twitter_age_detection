@@ -79,16 +79,15 @@ classifiers_embedded_64 = [
 classifiers_embedded_128 = [
     LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=-1, max_iter=1000),
     # KNeighborsClassifier(3),
-    SVC(kernel="linear", C=0.11),
-    SVC(kernel='rbf', gamma=0.029, C=27.4, class_weight='balanced'),
+    # SVC(kernel="linear", C=0.11),
+    # SVC(kernel='rbf', gamma=0.029, C=27.4, class_weight='balanced'),
     # DecisionTreeClassifier(max_depth=5),
     # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
     # all of the cores are used
-    RandomForestClassifier(max_depth=7, n_estimators=50, criterion='entropy', bootstrap=False, max_features=0.12,
-                           n_jobs=-1),
+    # RandomForestClassifier(max_depth=7, n_estimators=50, criterion='entropy', bootstrap=False, max_features=0.12,n_jobs = -1),
     # AdaBoostClassifier(),
     # GradientBoostingClassifier(n_estimators=100)
-]
+    ]
 
 
 def run_detectors(X, y, names, classifiers, n_folds):

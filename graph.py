@@ -75,6 +75,7 @@ class Graph:
         walks = self.initialise_walk_array(num_walks, walk_length)
 
         for walk_idx in range(walk_length - 1):
+            print 'generating walk step {}'.format(walk_idx)
             # get the degree of the vertices we're starting from
             current_vertices = walks[:, walk_idx]
             # get the indices of the next vertices. This is the random bit
@@ -108,40 +109,6 @@ def read_data(x_path, threshold):
     X1, cols = utils.remove_sparse_features(X, threshold=threshold)
     print X1.shape
     return X1
-
-
-def scenario_build_small_age_embedding():
-    print 'reading data'
-    x = read_data('resources/test/X.p', 0)
-    s = datetime.now()
-    # x = csr_matrix(np.array([[0, 1], [1, 0]]))
-    g = Graph(x)
-    print 'building edges'
-    g.build_edge_array()
-    print 'generating walks'
-    walks = g.generate_walks(10, 80)
-    g.learn_embeddings(walks, 128, 'resources/test/test128.emd')
-    print datetime.now() - s, ' s'
-    print walks.shape
-    df = pd.DataFrame(walks)
-    df.to_csv('resources/test/walks.csv', index=False, header=None)
-
-
-def scenario_build_large_age_embedding():
-    print 'reading data'
-    x = read_data('resources/test/X_large.p', 0)
-    s = datetime.now()
-    # x = csr_matrix(np.array([[0, 1], [1, 0]]))
-    g = Graph(x)
-    print 'building edges'
-    g.build_edge_array()
-    print 'generating walks'
-    walks = g.generate_walks(10, 80)
-    g.learn_embeddings(walks, 128, 'resources/test/test128_large.emd')
-    print datetime.now() - s, ' s'
-    print walks.shape
-    df = pd.DataFrame(walks)
-    df.to_csv('resources/test/walks_large.csv', index=False, header=None)
 
 
 def scenario_generate_public_embeddings(size=128):

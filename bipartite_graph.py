@@ -108,6 +108,7 @@ class BipartiteGraph:
         walks = self.initialise_walk_array(num_walks, walk_length)
 
         for walk_idx in xrange(0, walk_length, 2):
+            print 'generating walk step {}'.format(walk_idx)
             # get the vertices we're starting from
             current_vertices = walks[:, walk_idx]
             # get the indices of the next vertices. This is the random bit
@@ -138,19 +139,6 @@ class BipartiteGraph:
         model.save_word2vec_format(outpath)
 
 
-def read_data(threshold):
-    """
-    reads the features and target variables
-    :return:
-    """
-    x_path = 'resources/test/X.p'
-    y_path = 'resources/test/y.p'
-    X = utils.read_pickle(x_path)
-    X1, cols = utils.remove_sparse_features(X, threshold=threshold)
-    print X1.shape
-    return X1
-
-
 def scenario_debug():
     x = csr_matrix(np.array([[0, 1, 0, 1, 0],
                              [0, 0, 1, 1, 0],
@@ -168,22 +156,38 @@ def scenario_debug():
     print datetime.now() - s, ' s'
     print walks.shape
 
-def scenario_generate_small_age_embedding():
+
+def scenario_build_small_age_embedding():
     print 'reading data'
-    x = read_data(1)
+    x, y = utils.read_data('resources/test/X.p', 'resources/test/y.p', 1)
     s = datetime.now()
-    # x = csr_matrix(np.array([[0, 1], [1, 0]]))
     g = BipartiteGraph(x)
     print 'building edges'
     g.build_edge_array()
     print 'generating walks'
     walks = g.generate_walks(10, 80)
-    g.learn_embeddings(walks, 128, 'resources/test/test1282.emd')
+    g.learn_embeddings(walks, 128, 'resources/test/test128.emd')
     print datetime.now() - s, ' s'
     print walks.shape
     df = pd.DataFrame(walks)
-    df.to_csv('resources/test/walks2.csv', index=False, header=None)
+    df.to_csv('resources/test/walks.csv', index=False, header=None)
+
+
+def scenario_build_large_age_embedding():
+    print 'reading data'
+    x, y = utils.read_data('resources/test/X_large.p', 'resources/test/y_large.p',  1)
+    s = datetime.now()
+    g = BipartiteGraph(x)
+    print 'building edges'
+    g.build_edge_array()
+    print 'generating walks'
+    walks = g.generate_walks(10, 80)
+    g.learn_embeddings(walks, 128, 'resources/test/test128_large.emd')
+    print datetime.now() - s, ' s'
+    print walks.shape
+    df = pd.DataFrame(walks)
+    df.to_csv('resources/test/walks_large.csv', index=False, header=None)
 
 
 if __name__ == '__main__':
-    scenario_generate_small_age_embedding()
+    scenario_build_large_age_embedding()
