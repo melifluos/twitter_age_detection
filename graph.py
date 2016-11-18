@@ -99,13 +99,11 @@ class Graph:
         model.save_word2vec_format(outpath)
 
 
-def read_data(threshold):
+def read_data(x_path, threshold):
     """
     reads the features and target variables
     :return:
     """
-    x_path = 'resources/test/X.p'
-    y_path = 'resources/test/y.p'
     X = utils.read_pickle(x_path)
     X1, cols = utils.remove_sparse_features(X, threshold=threshold)
     print X1.shape
@@ -114,7 +112,7 @@ def read_data(threshold):
 
 def scenario_build_small_age_embedding():
     print 'reading data'
-    x = read_data(0)
+    x = read_data('resources/test/X.p', 0)
     s = datetime.now()
     # x = csr_matrix(np.array([[0, 1], [1, 0]]))
     g = Graph(x)
@@ -122,11 +120,28 @@ def scenario_build_small_age_embedding():
     g.build_edge_array()
     print 'generating walks'
     walks = g.generate_walks(10, 80)
-    g.learn_embeddings(walks, 128, 'resources/test/test1282.emd')
+    g.learn_embeddings(walks, 128, 'resources/test/test128.emd')
     print datetime.now() - s, ' s'
     print walks.shape
     df = pd.DataFrame(walks)
-    df.to_csv('resources/test/walks2.csv', index=False, header=None)
+    df.to_csv('resources/test/walks.csv', index=False, header=None)
+
+
+def scenario_build_large_age_embedding():
+    print 'reading data'
+    x = read_data('resources/test/X_large.p', 0)
+    s = datetime.now()
+    # x = csr_matrix(np.array([[0, 1], [1, 0]]))
+    g = Graph(x)
+    print 'building edges'
+    g.build_edge_array()
+    print 'generating walks'
+    walks = g.generate_walks(10, 80)
+    g.learn_embeddings(walks, 128, 'resources/test/test128_large.emd')
+    print datetime.now() - s, ' s'
+    print walks.shape
+    df = pd.DataFrame(walks)
+    df.to_csv('resources/test/walks_large.csv', index=False, header=None)
 
 
 def scenario_generate_public_embeddings(size=128):
@@ -153,5 +168,5 @@ def scenario_generate_public_embeddings(size=128):
 
 if __name__ == '__main__':
     s = datetime.now()
-    scenario_generate_public_embeddings(size=128)
+    scenario_build_large_age_embedding()
     print datetime.now() - s, ' s'

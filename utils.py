@@ -12,7 +12,7 @@ import pandas as pd
 import cPickle as pickle
 import numpy as np
 from sklearn.metrics import f1_score
-from sklearn.cross_validation import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 from scipy.io import loadmat
 import time
 import scipy.stats as stats
@@ -348,9 +348,10 @@ def read_pickle(path):
 
 
 def read_target(path):
-    targets = utils.read_pickle(path)
-    y = np.array(targets['cat'])
-    return y
+    targets = read_pickle(path)
+    targets.cat = targets.cat.astype(int)
+    targets.fan_idx = targets.fan_idx.astype(int)
+    return targets
 
 
 def stats_test(results_tuple):
