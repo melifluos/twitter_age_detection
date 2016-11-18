@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 from sklearn.multiclass import OneVsRestClassifier
 import utils
-from sklearn.cross_validation import KFold, StratifiedKFold
+from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier

@@ -6,8 +6,8 @@ import numpy as np
 from sklearn.feature_selection import SelectFromModel, chi2, SelectKBest, f_classif, RFECV
 from sklearn import svm
 import utils
-from sklearn.cross_validation import KFold, StratifiedKFold
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.datasets import make_moons, make_circles, make_classification
 from sklearn.neighbors import KNeighborsClassifier
@@ -87,7 +87,7 @@ classifiers_embedded_128 = [
     # RandomForestClassifier(max_depth=7, n_estimators=50, criterion='entropy', bootstrap=False, max_features=0.12,n_jobs = -1),
     # AdaBoostClassifier(),
     # GradientBoostingClassifier(n_estimators=100)
-    ]
+]
 
 
 def run_detectors(X, y, names, classifiers, n_folds):
@@ -138,23 +138,23 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     return y_pred, results
 
 
-def read_data(threshold, size):
-    """
-    reads the features and target variables
-    :return:
-    """
-    x_path = 'resources/test/X_large.p'
-    y_path = 'resources/test/y_large.p'
-    targets = utils.read_pickle(y_path)
-    y = np.array(targets['cat'])
-    X = utils.read_pickle(x_path)
-    X1, cols = utils.remove_sparse_features(X, threshold=threshold)
-    print X1.shape
-    X2 = utils.read_embedding('local_resources/roberto_embeddings/item.factors.200.01reg.200iter', targets, size=size)
-    X3 = utils.read_embedding('local_resources/roberto_embeddings/item.factors.200.001reg.200iter', targets, size=size)
-    # X3 = utils.read_embedding('resources/walks.emd', targets, size=64)
-    X = [X1, X2, X3]
-    return X, y
+# def read_data(threshold, size):
+#     """
+#     reads the features and target variables
+#     :return:
+#     """
+#     x_path = 'resources/test/X_large.p'
+#     y_path = 'resources/test/y_large.p'
+#     targets = utils.read_pickle(y_path)
+#     y = np.array(targets['cat'])
+#     X = utils.read_pickle(x_path)
+#     X1, cols = utils.remove_sparse_features(X, threshold=threshold)
+#     print X1.shape
+#     X2 = utils.read_embedding('local_resources/roberto_embeddings/item.factors.200.01reg.200iter', targets, size=size)
+#     X3 = utils.read_embedding('local_resources/roberto_embeddings/item.factors.200.001reg.200iter', targets, size=size)
+#     # X3 = utils.read_embedding('resources/walks.emd', targets, size=64)
+#     X = [X1, X2, X3]
+#     return X, y
 
 
 def run_all_datasets(datasets, y, names, classifiers, n_folds):
@@ -174,7 +174,7 @@ def run_all_datasets(datasets, y, names, classifiers, n_folds):
     return results
 
 
-def read_embeddings(paths, target_path, sizes):
+def read_roberto_embeddings(paths, target_path, sizes):
     targets = utils.read_pickle(target_path)
     y = np.array(targets['cat'])
     all_data = []
@@ -184,7 +184,7 @@ def read_embeddings(paths, target_path, sizes):
     return all_data, y
 
 
-def roberto_scenario():
+def roberto_scenario1():
     paths = ['local_resources/roberto_embeddings/item.factors.200.01reg.200iter',
              'local_resources/roberto_embeddings/item.factors.200.001reg.200iter',
              'local_resources/roberto_embeddings/item.factors.200.0001reg.200iter',
@@ -200,9 +200,40 @@ def roberto_scenario():
     y_path = 'resources/test/y_large.p'
 
     sizes = [201, 201, 201, 201, 200]
-    X, y = read_embeddings(paths, y_path, sizes)
+    X, y = read_roberto_embeddings(paths, y_path, sizes)
     n_folds = 5
-    results = utils.run_all_datasets(X, y, names, classifiers, n_folds)
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/roberto_emd/age_large_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/roberto_emd/age_large_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+def roberto_scenario2():
+    paths = ['local_resources/roberto_embeddings/item.factors.200.0001reg.200iter',
+             'local_resources/roberto_embeddings/item.factors.neg24',
+             'local_resources/roberto_embeddings/item.factors.neg12']
+
+    deepwalk_path = 'resources/test/test128_large.emd'
+
+    names = [['logistic_0001reg.200iter'],
+             ['logistic_neg24'],
+             ['logistic_neg12'], ['logistic_deepwalk']]
+
+    y_path = 'resources/test/y_large.p'
+
+    target = utils.read_target(y_path)
+    x_deepwalk = utils.read_embedding(deepwalk_path, target, 128)
+
+    sizes = [201, 201, 201, 128]
+    X, y = read_roberto_embeddings(paths, y_path, sizes)
+    X.append(x_deepwalk)
+    n_folds = 5
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
     results = utils.stats_test(all_results)
     print 'macro', results[0]
@@ -224,7 +255,7 @@ def bipartite_scenario():
     sizes = [128, 128]
     X, y = read_embeddings(paths, y_path, sizes)
     n_folds = 5
-    results = utils.run_all_datasets(X, y, names, classifiers, n_folds)
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
     results = utils.stats_test(all_results)
     print 'macro', results[0]
@@ -236,14 +267,14 @@ def bipartite_scenario():
 
 
 def blogcatalog_scenario():
-    paths = ['local_resources/blogcatalog/X.p']
+    x_path = 'local_resources/blogcatalog/X.p'
 
     names = [['logistic']]
 
     y_path = 'local_resources/blogcatalog/y.p'
 
     sizes = [128]
-    X, y = read_data(paths, y_path, sizes)
+    X, y = utils.read_data(x_path, y_path, sizes)
     n_folds = 5
     results = run_all_datasets(X, y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
@@ -257,7 +288,7 @@ def blogcatalog_scenario():
 
 
 if __name__ == "__main__":
-    bipartite_scenario()
+    roberto_scenario2()
 
 # size = 201
 # X, y = read_data(5, size)
