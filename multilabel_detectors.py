@@ -125,11 +125,12 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     :return:
     """
     # Construct a kfolds object
-    kf = KFold(y.shape[0], n_folds=n_folds)
+    kf = KFold(n_splits=n_folds)
+    splits = kf.split(X, y[:, 0])
     y_pred = y.copy()
 
     # Iterate through folds
-    for idx, (train_index, test_index) in enumerate(kf):
+    for idx, (train_index, test_index) in enumerate(splits):
         X_train, X_test = X[train_index], X[test_index]
         y_train = y[train_index]
         # Initialize a classifier with key word arguments
