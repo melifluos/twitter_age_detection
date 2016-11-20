@@ -83,11 +83,12 @@ def run_cv_pred(X, y, n_folds, model, *args, **kwargs):
     """
     # Construct a kfolds object
 
-    kf = StratifiedKFold(y, n_folds=n_folds)
+    skf = StratifiedKFold(n_splits=n_folds)
+    splits = skf.split(X, y)
     y_pred = np.zeros(shape=y.shape)
 
     # Iterate through folds
-    for train_index, test_index in kf:
+    for train_index, test_index in splits:
         test = MLData(X[test_index], y[test_index])
         train = MLData(X[train_index], y[train_index])
         data = MLdataset(train, test)

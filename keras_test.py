@@ -6,7 +6,7 @@ from keras.layers import Dense, Activation
 from keras.optimizers import SGD
 import utils
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import LabelBinarizer
 
 __author__ = 'benchamberlain'
 
@@ -67,9 +67,11 @@ def one_hot(y):
     :param y: a 1d numpy array
     :return: a [n_data, 10] numpy array
     """
-    enc = OneHotEncoder(n_values=10, sparse=False)
-    temp = enc.fit_transform(y)
-    return np.reshape(temp, newshape=[-1, 10], order='C')
+    lb = LabelBinarizer()
+    temp = lb.fit_transform(y)
+    print 'output classes', lb.classes_
+    return temp
+    # return np.reshape(temp, newshape=[-1, 10], order='C')
 
 
 def build_model(input_dim):
@@ -81,7 +83,7 @@ def build_model(input_dim):
 
     model.add(Dense(output_dim=128, input_dim=input_dim))
     model.add(Activation("relu"))
-    model.add(Dense(output_dim=10))
+    model.add(Dense(output_dim=6))
     model.add(Activation("softmax"))
 
     model.compile(loss="categorical_crossentropy", optimizer=SGD(lr=0.01, momentum=0.9, nesterov=True),
