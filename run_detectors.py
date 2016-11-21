@@ -55,7 +55,7 @@ names128 = [
 ]
 
 classifiers = [
-    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=-1, max_iter=1000),
+    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=1, max_iter=1000),
     # KNeighborsClassifier(3),
     # SVC(kernel="linear", C=0.0073),
     # SVC(kernel='rbf', gamma=0.011, C=9.0, class_weight='balanced'),
@@ -66,7 +66,7 @@ classifiers = [
 ]
 
 classifiers_embedded_64 = [
-    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=-1, max_iter=1000),
+    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=1, max_iter=1000),
     # KNeighborsClassifier(3),
     # SVC(kernel="linear", C=0.11),
     # SVC(kernel='rbf', gamma=0.018, C=31, class_weight='balanced'),
@@ -77,7 +77,7 @@ classifiers_embedded_64 = [
 ]
 
 classifiers_embedded_128 = [
-    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=-1, max_iter=1000),
+    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=1, max_iter=1000),
     # KNeighborsClassifier(3),
     # SVC(kernel="linear", C=0.11),
     # SVC(kernel='rbf', gamma=0.029, C=27.4, class_weight='balanced'),
@@ -117,11 +117,12 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     :return:
     """
     # Construct a kfolds object
-    kf = StratifiedKFold(y, n_folds=n_folds)
+    skf = StratifiedKFold(n_splits=n_folds)
+    splits = skf.split(X, y)
     y_pred = y.copy()
 
     # Iterate through folds
-    for idx, (train_index, test_index) in enumerate(kf):
+    for idx, (train_index, test_index) in enumerate(splits):
         X_train, X_test = X[train_index], X[test_index]
         y_train = y[train_index]
         # Initialize a classifier with key word arguments
