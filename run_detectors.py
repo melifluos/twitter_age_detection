@@ -161,9 +161,9 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
 def run_all_datasets(datasets, y, names, classifiers, n_folds):
     """
     Loop through a list of datasets running potentially numerous classifiers on each
-    :param datasets:
-    :param y:
-    :param names:
+    :param datasets: iterable of numpy (sparse) arrays
+    :param y: numpy (sparse) array of shape = (n_data, n_classes) of (n_data, 1)
+    :param names: iterable of classifier names
     :param classifiers:
     :param n_folds:
     :return: A tuple of pandas DataFrames for each dataset containing (macroF1, microF1)
@@ -245,6 +245,43 @@ def roberto_scenario2():
     results[1].to_csv(micro_path, index=True)
 
 
+def large_vs_small_scenario():
+    deepwalk_path_large = 'resources/test/test128_large.emd'
+    deepwalk_path = 'resources/test/test128.emd'
+
+    names = [['logistic'], ['logistic_deepwalk']]
+    names_large = [['logistic_large'], ['logistic_deepwalk_large']]
+
+    y_path_large = 'resources/test/y_large.p'
+    y_path = 'resources/test/y.p'
+
+    x_path_large = 'resources/test/X_large.p'
+    x_path = 'resources/test/X.p'
+
+    target = utils.read_target(y_path)
+    target_large = utils.read_target(y_path_large)
+
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+    x_large, y_large = utils.read_data(x_path_large, y_path_large, threshold=1)
+
+    x_deepwalk_large = utils.read_embedding(deepwalk_path_large, target_large, 128)
+    x_deepwalk = utils.read_embedding(deepwalk_path, target, 128)
+
+    n_folds = 5
+    X = [x, x_deepwalk]
+    X_large = [x_large, x_deepwalk_large]
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    results_large = run_all_datasets(X_large, y_large, names_large, classifiers, n_folds)
+    all_results = utils.merge_results(results + results_large)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/age_small_v_large_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/age_small_v_large_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
 def bipartite_scenario():
     paths = ['resources/test/test128.emd', 'resources/test/test1282.emd']
 
@@ -288,8 +325,34 @@ def blogcatalog_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
+def ensemble_scenario():
+    deepwalk_path = 'resources/test/test128.emd'
+
+    names = [['logistic'], ['logistic_deepwalk'], ['ensemble']]
+    y_path = 'resources/test/y.p'
+    x_path = 'resources/test/X.p'
+
+    target = utils.read_target(y_path)
+
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+    x_deepwalk = utils.read_embedding(deepwalk_path, target, 128)
+    all_features = np.concatenate((x.toarray(), x_deepwalk), axis=1)
+
+    n_folds = 5
+    X = [x, x_deepwalk, all_features]
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/ensemble_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/ensemble_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
 if __name__ == "__main__":
-    roberto_scenario2()
+    ensemble_scenario()
 
 # size = 201
 # X, y = read_data(5, size)
