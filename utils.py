@@ -152,7 +152,7 @@ def balance_classes(input_df, n_cat2=23000, n_cat9=1000):
     return input_df
 
 
-def sample_balanced_data(label_path, data_path, n_samples, max_cat):
+def sample_balanced_data(label_path, data_path, outpath, n_samples, max_cat):
     """
     sample n_samples from each decade. Total numbers are:
     1    930006
@@ -175,16 +175,16 @@ def sample_balanced_data(label_path, data_path, n_samples, max_cat):
     # read label information
     labels = pd.read_csv(label_path)
     labels['cat'] = labels['age'].apply(lambda x: int(x / 10))
-    labels.cat = labels.cat.map(lambda x: max_cat if (x > max_cat) else x)
-    grouped = labels.groupby('cat')
+    # make a greater than final category
+    labels['cat1'] = labels.cat.map(lambda x: max_cat if (x > max_cat) else x)
+    grouped = labels.groupby('cat1')
     samples = grouped.apply(lambda x: x.sample(n=n_samples))
-    samples = samples.rename(columns={'cat': 'cat1'})
-    # join_df = pd.DataFrame(index=df2.fan_id, data=df2.cat)
-    # join_df = join_df.reset_index()
-    # join_df.head()
     samples = samples.reset_index()
     join_df = samples[['fan_id', 'cat1']]
     output = join_df.merge(data)
+    output = output.drop('cat', axis=1)
+    output = output.rename(columns={'cat1': 'cat'})
+    output.to_csv(outpath, index=False)
 
 
 def remove_duplicate_labelled_fans():
