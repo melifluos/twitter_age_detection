@@ -54,12 +54,17 @@ class Graph:
 
     def initialise_walk_array(self, num_walks, walk_length):
         """
-        Build an array to store the random walks with the initial starting positions in the first column
-        :return:
+        Build an array to store the random walks with the initial starting positions in the first column. The order of
+        the nodes is randomly shuffled as this is well known to speed up SGD convergence (Deepwalk: online learning of
+        social representations)
+        :return: A numpy array of shape = (n_vertices * num_walks, walk_length) which is all zero except for the first
+        column
         """
         initial_vertices = np.arange(self.n_vertices)
         walks = np.zeros(shape=(self.n_vertices * num_walks, walk_length), dtype=int)
-        walks[:, 0] = np.tile(initial_vertices, num_walks)
+        walk_starts = np.tile(initial_vertices, num_walks)
+        np.random.shuffle(walk_starts)
+        walks[:, 0] = walk_starts
         return walks
 
     def generate_walks(self, num_walks, walk_length):

@@ -457,7 +457,7 @@ def merge_results(results_list):
 
 
 if __name__ == "__main__":
-    X, y, edge_list = preprocess_data('resources/balanced_6class_fan_star_cat.csv')
-    persist_edgelist(edge_list, 'resources/test/balanced6.edgelist')
-    persist_data('resources/test/balanced6X.p', 'resources/test/balanced6y.p',
+    X, y, edge_list = preprocess_data('resources/balanced_7class_fan_star_cat.csv')
+    persist_edgelist(edge_list, 'resources/test/balanced7.edgelist')
+    persist_data('resources/test/balanced7X.p', 'resources/test/balanced7y.p',
                  X, y)
