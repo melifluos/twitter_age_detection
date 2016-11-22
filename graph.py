@@ -75,8 +75,8 @@ class Graph:
         :return:
         """
         assert self.deg.min() > 0
-        degs = np.tile(self.deg, num_walks)
-        edges = np.tile(self.edges, (num_walks, 1))
+        # degs = np.tile(self.deg, num_walks)
+        # edges = np.tile(self.edges, (num_walks, 1))
         walks = self.initialise_walk_array(num_walks, walk_length)
 
         for walk_idx in range(walk_length - 1):
@@ -84,8 +84,8 @@ class Graph:
             # get the degree of the vertices we're starting from
             current_vertices = walks[:, walk_idx]
             # get the indices of the next vertices. This is the random bit
-            next_vertex_indices = self.sample_next_vertices(current_vertices, degs)
-            walks[:, walk_idx + 1] = edges[current_vertices, next_vertex_indices]
+            next_vertex_indices = self.sample_next_vertices(current_vertices, self.deg)
+            walks[:, walk_idx + 1] = self.edges[current_vertices, next_vertex_indices]
         return walks
 
     def learn_embeddings(self, walks, size, outpath):

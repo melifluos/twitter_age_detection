@@ -93,6 +93,7 @@ class BipartiteGraph:
         # is taking 2 steps at a time
         walks = np.zeros(shape=(self.n_rows * num_walks, walk_length + 1), dtype=np.uint32)
         walk_starts = np.tile(initial_vertices, num_walks)
+        print 'shuffling walks'
         np.random.shuffle(walk_starts)
         walks[:, 0] = walk_starts
         print 'constructed random walk array of shape {0}'.format(walks.shape)
@@ -107,12 +108,12 @@ class BipartiteGraph:
         """
         assert walk_length % 2 == 0
         assert self.row_deg.min() > 0
-        row_degs = np.tile(self.row_deg, num_walks)
-        row_edges = np.tile(self.row_edges, (num_walks, 1))
+        # row_degs = np.tile(self.row_deg, num_walks)
+        # row_edges = np.tile(self.row_edges, (num_walks, 1))
         assert self.col_deg.min() > 0
-        col_degs = np.tile(self.col_deg, num_walks)
-        col_edges = np.tile(self.col_edges, (num_walks, 1))
-
+        # col_degs = np.tile(self.col_deg, num_walks)
+        # col_edges = np.tile(self.col_edges, (num_walks, 1))
+        print 'initialising walks'
         walks = self.initialise_walk_array(num_walks, walk_length)
 
         for walk_idx in xrange(0, walk_length, 2):
@@ -120,13 +121,13 @@ class BipartiteGraph:
             # get the vertices we're starting from
             current_vertices = walks[:, walk_idx]
             # get the indices of the next vertices. This is the random bit
-            next_vertex_indices = self.sample_next_vertices(current_vertices, row_degs)
-            next_vertices = row_edges[current_vertices, next_vertex_indices]
+            next_vertex_indices = self.sample_next_vertices(current_vertices, self.row_deg)
+            next_vertices = self.row_edges[current_vertices, next_vertex_indices]
             # store distinct vertex indices for the columns by adding the max index for the rows
             walks[:, walk_idx + 1] = next_vertices + self.n_rows
             # get the indices of the next vertices. This is the random bit
-            next_vertex_indices = self.sample_next_vertices(next_vertices, col_degs)
-            walks[:, walk_idx + 2] = col_edges[next_vertices, next_vertex_indices]
+            next_vertex_indices = self.sample_next_vertices(next_vertices, self.col_deg)
+            walks[:, walk_idx + 2] = self.col_edges[next_vertices, next_vertex_indices]
         # little hack to make the right length walk
         return walks[:, :-1]
 
