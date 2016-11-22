@@ -23,8 +23,10 @@ class BipartiteGraph:
         self.col_deg = np.array(adj.sum(axis=0), dtype=int).squeeze()
         self.n_rows = len(self.row_deg)
         self.n_cols = len(self.col_deg)
-        self.row_edges = np.zeros(shape=(self.n_rows, max(self.row_deg)), dtype=int)
-        self.col_edges = np.zeros(shape=(self.n_cols, max(self.col_deg)), dtype=int)
+        self.row_edges = np.zeros(shape=(self.n_rows, max(self.row_deg)), dtype=np.uint32)
+        self.col_edges = np.zeros(shape=(self.n_cols, max(self.col_deg)), dtype=np.uint32)
+        print 'generated row_edges of shape {0} and column edges of shape {1}'.format(self.row_edges.shape,
+                                                                                      self.col_edges.shape)
 
     def build_edge_array(self):
         """
@@ -89,10 +91,11 @@ class BipartiteGraph:
         initial_vertices = np.arange(self.n_rows)
         # Add an extra column, which gets trimmed off later, but needed as the walk
         # is taking 2 steps at a time
-        walks = np.zeros(shape=(self.n_rows * num_walks, walk_length + 1), dtype=int)
+        walks = np.zeros(shape=(self.n_rows * num_walks, walk_length + 1), dtype=np.uint32)
         walk_starts = np.tile(initial_vertices, num_walks)
         np.random.shuffle(walk_starts)
         walks[:, 0] = walk_starts
+        print 'constructed random walk array of shape {0}'.format(walks.shape)
         return walks
 
     def generate_walks(self, num_walks, walk_length):
@@ -210,5 +213,21 @@ def scenario_build_balanced6_embeddings():
     df.to_csv('resources/test/balanced6_walks.csv', index=False, header=None)
 
 
+def scenario_build_balanced7_embeddings():
+    print 'reading data'
+    x, y = utils.read_data('resources/test/balanced7X.p', 'resources/test/balanced7y.p', 1)
+    s = datetime.now()
+    g = BipartiteGraph(x)
+    print 'building edges'
+    g.build_edge_array()
+    print 'generating walks'
+    walks = g.generate_walks(10, 80)
+    g.learn_embeddings(walks, 128, 'resources/test/balanced7.emd')
+    print datetime.now() - s, ' s'
+    print walks.shape
+    df = pd.DataFrame(walks)
+    df.to_csv('resources/test/balanced6_walks.csv', index=False, header=None)
+
+
 if __name__ == '__main__':
-    scenario_build_balanced6_embeddings()
+    scenario_build_balanced7_embeddings()
