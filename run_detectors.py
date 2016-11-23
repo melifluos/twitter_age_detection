@@ -304,27 +304,6 @@ def bipartite_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
-def blogcatalog_scenario():
-    x_path = 'local_resources/blogcatalog/X.p'
-
-    names = [['logistic']]
-
-    y_path = 'local_resources/blogcatalog/y.p'
-
-    sizes = [128]
-    X, y = utils.read_data(x_path, y_path, sizes)
-    n_folds = 5
-    results = run_all_datasets(X, y, names, classifiers, n_folds)
-    all_results = utils.merge_results(results)
-    results = utils.stats_test(all_results)
-    print 'macro', results[0]
-    print 'micro', results[1]
-    macro_path = 'results/blogcatalog/debug_test_macro' + utils.get_timestamp() + '.csv'
-    micro_path = 'results/blogcatalog/debug_test_micro' + utils.get_timestamp() + '.csv'
-    results[0].to_csv(macro_path, index=True)
-    results[1].to_csv(micro_path, index=True)
-
-
 def ensemble_scenario():
     deepwalk_path = 'resources/test/test128.emd'
 
@@ -351,8 +330,53 @@ def ensemble_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
+def balanced_ensemble_scenario():
+    deepwalk_path = 'resources/test/test128.emd'
+
+    names = [['logistic'], ['logistic_deepwalk'], ['ensemble']]
+    y_path = 'resources/test/y.p'
+    x_path = 'resources/test/X.p'
+
+    target = utils.read_target(y_path)
+
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+    x_deepwalk = utils.read_embedding(deepwalk_path, target, 128)
+    all_features = np.concatenate((x.toarray(), x_deepwalk), axis=1)
+
+    n_folds = 5
+    X = [x, x_deepwalk, all_features]
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/ensemble_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/ensemble_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+def balanced6_scenario():
+    names = [['logistic']]
+    y_path = 'resources/test/balanced6y.p'
+    x_path = 'resources/test/balanced6X.p'
+
+    target = utils.read_target(y_path)
+    n_folds = 3
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+    results = run_all_datasets([x], y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced6_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced6_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
 if __name__ == "__main__":
-    ensemble_scenario()
+    balanced6_scenario()
 
 # size = 201
 # X, y = read_data(5, size)

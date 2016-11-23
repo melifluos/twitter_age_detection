@@ -162,6 +162,41 @@ def build_balanced_dataset(label_path):
     labels['cat'] =
 
 
+def sample_balanced_data(label_path, data_path, outpath, n_samples, max_cat):
+    """
+    sample n_samples from each decade. Total numbers are:
+    1    930006
+    2    429184
+    3     69976
+    4     30663
+    5     17307
+    6      8010
+    7      2870
+    8      1612
+    9         5
+    :param label_path: path to labelled_fans_with_stars if using fan_star_category data or labelled_fans if using
+    labelled_fan_friends
+    :param data_path path to the data
+    :param n_samples: the number of samples to take from each category
+    :return:
+    """
+    data = pd.read_csv(data_path)
+    uids = pd.DataFrame(data=data['fan_id'].unique(), columns=['fan_id'])
+    # read label information
+    labels = pd.read_csv(label_path)
+    labels['cat'] = labels['age'].apply(lambda x: int(x / 10))
+    # make a greater than final category
+    labels['cat1'] = labels.cat.map(lambda x: max_cat if (x > max_cat) else x)
+    grouped = labels.groupby('cat1')
+    samples = grouped.apply(lambda x: x.sample(n=n_samples))
+    samples = samples.reset_index()
+    join_df = samples[['fan_id', 'cat1']]
+    output = join_df.merge(data)
+    output = output.drop('cat', axis=1)
+    output = output.rename(columns={'cat1': 'cat'})
+    output.to_csv(outpath, index=False)
+
+
 def remove_duplicate_labelled_fans():
     """
     Creates a deduplicated list of fans from the raw data
@@ -180,8 +215,10 @@ def preprocess_data(path):
     :return: sparse csc matrix X of [fan_idx,star_idx]
     :return: numpy array y of target categories
     """
-    temp = pd.read_csv(path)
+    temp = pd.read_csv(path, dtype=int)
     input_data = temp.drop_duplicates(['fan_id', 'star_id'])
+    # remove known bad IDs
+    input_data = remove_bad_ids('resources/exclusion_list.csv', input_data)
     # replace the fan ids with an index
     fan_ids = input_data['fan_id'].drop_duplicates()
     idx = np.arange(len(fan_ids))
@@ -192,6 +229,19 @@ def preprocess_data(path):
     y = all_data[['fan_idx', 'cat']].drop_duplicates()
     X = edge_list_to_sparse_mat(edge_list)
     return X, y, edge_list
+
+
+def remove_bad_ids(path, data):
+    """
+    remove ids that have been manually identified as mislabelled
+    :param path: path to the list of bad ids
+    :param data: a pandas DataFrame containing a 'fan_id' column
+    :return: A pandas DataFrame with the bad IDs removed
+    """
+    exclusion_list = pd.read_csv(path)
+    bad_ids = exclusion_list['fan_id']
+    data = data[~data['fan_id'].isin(bad_ids)]
+    return data
 
 
 def mat2edgelist(path):
@@ -247,7 +297,7 @@ def persist_edgelist(edge_list, path):
     edge_list.to_csv(path, index=False, sep=" ", header=False)
 
 
-def persist_data(folder, X, y):
+def persist_data(x_path, y_path, X, y):
     """
     Write the scipy csc sparse matrix X and a pandas DF y to disk
     :param path: the path to write data to
@@ -255,8 +305,8 @@ def persist_data(folder, X, y):
     :param y: pandas DF target values with columns [fan_idx, cat]
     :return: None
     """
-    pickle_sparse(X, folder + '/X.p')
-    y.to_pickle(folder + '/y.p')
+    pickle_sparse(X, x_path)
+    y.to_pickle(y_path)
 
 
 def persist_sparse_data(folder, X, y):
@@ -376,10 +426,14 @@ def stats_test(results_tuple):
         results['mean'] = results.mean(axis=1)
         results = results.sort('mean', ascending=False)
 
-        print '1 versus 2'
-        print(stats.ttest_ind(a=results.ix[0, 0:-1],
-                              b=results.ix[1, 0:-1],
-                              equal_var=False))
+        try:
+            print '1 versus 2'
+            print(stats.ttest_ind(a=results.ix[0, 0:-1],
+                                  b=results.ix[1, 0:-1],
+                                  equal_var=False))
+        except IndexError:
+            pass
+
         try:
             print '2 versus 3'
             print(stats.ttest_ind(a=results.ix[1, 0:-1],
@@ -413,7 +467,7 @@ def merge_results(results_list):
 
 
 if __name__ == "__main__":
-    # X, y, edge_list = preprocess_data('resources/test.csv')
-    edge_list = mat2edgelist('resources/test/youtube/youtube.mat')
-    persist_edgelist(edge_list, 'resources/test/youtube/youtube.edgelist')
-    # persist_data('resources/test', X, y)
+    X, y, edge_list = preprocess_data('resources/balanced_7class_fan_star_cat.csv')
+    persist_edgelist(edge_list, 'resources/test/balanced7.edgelist')
+    persist_data('resources/test/balanced7X.p', 'resources/test/balanced7y.p',
+                 X, y)

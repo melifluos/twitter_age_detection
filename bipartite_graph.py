@@ -23,8 +23,10 @@ class BipartiteGraph:
         self.col_deg = np.array(adj.sum(axis=0), dtype=int).squeeze()
         self.n_rows = len(self.row_deg)
         self.n_cols = len(self.col_deg)
-        self.row_edges = np.zeros(shape=(self.n_rows, max(self.row_deg)), dtype=int)
-        self.col_edges = np.zeros(shape=(self.n_cols, max(self.col_deg)), dtype=int)
+        self.row_edges = np.zeros(shape=(self.n_rows, max(self.row_deg)), dtype=np.uint32)
+        self.col_edges = np.zeros(shape=(self.n_cols, max(self.col_deg)), dtype=np.uint32)
+        print 'generated row_edges of shape {0} and column edges of shape {1}'.format(self.row_edges.shape,
+                                                                                      self.col_edges.shape)
 
     def build_edge_array(self):
         """
@@ -80,14 +82,21 @@ class BipartiteGraph:
 
     def initialise_walk_array(self, num_walks, walk_length):
         """
-        Build an array to store the random walks with the initial starting positions in the first column
-        :return:
+        Build an array to store the random walks with the initial starting positions in the first column. The order of
+        the nodes is randomly shuffled as this is well known to speed up SGD convergence (Deepwalk: online learning of
+        social representations)
+        :return: A numpy array of shape = (n_vertices * num_walks, walk_length) which is all zero except for the first
+        column
         """
         initial_vertices = np.arange(self.n_rows)
         # Add an extra column, which gets trimmed off later, but needed as the walk
         # is taking 2 steps at a time
-        walks = np.zeros(shape=(self.n_rows * num_walks, walk_length + 1), dtype=int)
-        walks[:, 0] = np.tile(initial_vertices, num_walks)
+        walks = np.zeros(shape=(self.n_rows * num_walks, walk_length + 1), dtype=np.uint32)
+        walk_starts = np.tile(initial_vertices, num_walks)
+        print 'shuffling walks'
+        np.random.shuffle(walk_starts)
+        walks[:, 0] = walk_starts
+        print 'constructed random walk array of shape {0}'.format(walks.shape)
         return walks
 
     def generate_walks(self, num_walks, walk_length):
@@ -99,12 +108,12 @@ class BipartiteGraph:
         """
         assert walk_length % 2 == 0
         assert self.row_deg.min() > 0
-        row_degs = np.tile(self.row_deg, num_walks)
-        row_edges = np.tile(self.row_edges, (num_walks, 1))
+        # row_degs = np.tile(self.row_deg, num_walks)
+        # row_edges = np.tile(self.row_edges, (num_walks, 1))
         assert self.col_deg.min() > 0
-        col_degs = np.tile(self.col_deg, num_walks)
-        col_edges = np.tile(self.col_edges, (num_walks, 1))
-
+        # col_degs = np.tile(self.col_deg, num_walks)
+        # col_edges = np.tile(self.col_edges, (num_walks, 1))
+        print 'initialising walks'
         walks = self.initialise_walk_array(num_walks, walk_length)
 
         for walk_idx in xrange(0, walk_length, 2):
@@ -112,13 +121,13 @@ class BipartiteGraph:
             # get the vertices we're starting from
             current_vertices = walks[:, walk_idx]
             # get the indices of the next vertices. This is the random bit
-            next_vertex_indices = self.sample_next_vertices(current_vertices, row_degs)
-            next_vertices = row_edges[current_vertices, next_vertex_indices]
+            next_vertex_indices = self.sample_next_vertices(current_vertices, self.row_deg)
+            next_vertices = self.row_edges[current_vertices, next_vertex_indices]
             # store distinct vertex indices for the columns by adding the max index for the rows
             walks[:, walk_idx + 1] = next_vertices + self.n_rows
             # get the indices of the next vertices. This is the random bit
-            next_vertex_indices = self.sample_next_vertices(next_vertices, col_degs)
-            walks[:, walk_idx + 2] = col_edges[next_vertices, next_vertex_indices]
+            next_vertex_indices = self.sample_next_vertices(next_vertices, self.col_deg)
+            walks[:, walk_idx + 2] = self.col_edges[next_vertices, next_vertex_indices]
         # little hack to make the right length walk
         return walks[:, :-1]
 
@@ -175,7 +184,7 @@ def scenario_build_small_age_embedding():
 
 def scenario_build_large_age_embedding():
     print 'reading data'
-    x, y = utils.read_data('resources/test/X_large.p', 'resources/test/y_large.p',  1)
+    x, y = utils.read_data('resources/test/X_large.p', 'resources/test/y_large.p', 1)
     s = datetime.now()
     g = BipartiteGraph(x)
     print 'building edges'
@@ -189,5 +198,37 @@ def scenario_build_large_age_embedding():
     df.to_csv('resources/test/walks_large.csv', index=False, header=None)
 
 
+def scenario_build_balanced6_embeddings():
+    print 'reading data'
+    x, y = utils.read_data('resources/test/balanced6X.p', 'resources/test/balanced6y.p', 1)
+    s = datetime.now()
+    g = BipartiteGraph(x)
+    print 'building edges'
+    g.build_edge_array()
+    print 'generating walks'
+    walks = g.generate_walks(10, 80)
+    g.learn_embeddings(walks, 128, 'resources/test/balanced6.emd')
+    print datetime.now() - s, ' s'
+    print walks.shape
+    df = pd.DataFrame(walks)
+    df.to_csv('resources/test/balanced6_walks.csv', index=False, header=None)
+
+
+def scenario_build_balanced7_embeddings():
+    print 'reading data'
+    x, y = utils.read_data('resources/test/balanced7X.p', 'resources/test/balanced7y.p', 1)
+    s = datetime.now()
+    g = BipartiteGraph(x)
+    print 'building edges'
+    g.build_edge_array()
+    print 'generating walks'
+    walks = g.generate_walks(10, 80)
+    g.learn_embeddings(walks, 128, 'resources/test/balanced7.emd')
+    print datetime.now() - s, ' s'
+    print walks.shape
+    df = pd.DataFrame(walks)
+    df.to_csv('resources/test/balanced6_walks.csv', index=False, header=None)
+
+
 if __name__ == '__main__':
-    scenario_build_large_age_embedding()
+    scenario_build_balanced7_embeddings()

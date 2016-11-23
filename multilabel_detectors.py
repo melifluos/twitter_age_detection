@@ -48,7 +48,7 @@ names64 = [
 names128 = [
     "Logistic_Regression128",
     # "Nearest_Neighbors128",
-    "Linear_SVM128",
+    # "Linear_SVM128",
     # "RBF_SVM128",
     # "Decision_Tree128",
     # "Random_Forest128"
@@ -126,7 +126,7 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     """
     # Construct a kfolds object
     kf = KFold(n_splits=n_folds)
-    splits = kf.split(X, y[:, 0])
+    splits = kf.split(X, y)
     y_pred = y.copy()
 
     # Iterate through folds
