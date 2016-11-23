@@ -151,6 +151,16 @@ def balance_classes(input_df, n_cat2=23000, n_cat9=1000):
     input_df = pd.concat([input_df, cat2, cat9])
     return input_df
 
+def map_ages():
+    """
+    A function that maps ages to classes
+    :return:
+    """
+def build_balanced_dataset(label_path):
+
+    labels = pd.read_cvs(label_path)
+    labels['cat'] =
+
 
 def remove_duplicate_labelled_fans():
     """
