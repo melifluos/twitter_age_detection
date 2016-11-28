@@ -166,6 +166,16 @@ def read_roberto_embeddings(paths, target_path, sizes):
     return all_data, y
 
 
+def read_embeddings(paths, target_path, sizes):
+    targets = utils.read_pickle(target_path)
+    y = np.array(targets['cat'])
+    all_data = []
+    for elem in zip(paths, sizes):
+        data = utils.read_embedding(elem[0], targets, size=elem[1])
+        all_data.append(data)
+    return all_data, y
+
+
 def roberto_scenario1():
     paths = ['local_resources/roberto_embeddings/item.factors.200.01reg.200iter',
              'local_resources/roberto_embeddings/item.factors.200.001reg.200iter',
@@ -272,7 +282,7 @@ def bipartite_scenario():
     y_path = 'resources/test/y.p'
 
     sizes = [128, 128]
-    X, y = utils.read_embeddings(paths, y_path, sizes)
+    X, y = read_embeddings(paths, y_path, sizes)
     n_folds = 5
     results = run_all_datasets(X, y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
@@ -356,31 +366,8 @@ def balanced6_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
-def blogcatalog_deepwalk_node2vec():
-    paths = ['local_resources/blogcatalog/blogcatalog128.emd',
-             'local_resources/blogcatalog/blogcatalog_p025_q025_d128.emd']
-
-    names = [['logistic_p1_q1'],
-             ['logistic_p025_q025']]
-
-    y_path = 'local_resources/blogcatalog/y.p'
-
-    sizes = [128, 128]
-    X, y = utils.read_embeddings(paths, y_path, sizes)
-    n_folds = 5
-    results = run_all_datasets(X, y, names, classifiers, n_folds)
-    all_results = utils.merge_results(results)
-    results = utils.stats_test(all_results)
-    print 'macro', results[0]
-    print 'micro', results[1]
-    macro_path = 'results/blogcatalog/macro_deepwalk_node2vec' + utils.get_timestamp() + '.csv'
-    micro_path = 'results/blogcatalog/micro_deepwalk_node2vec' + utils.get_timestamp() + '.csv'
-    results[0].to_csv(macro_path, index=True)
-    results[1].to_csv(micro_path, index=True)
-
-
 if __name__ == "__main__":
-    blogcatalog_deepwalk_node2vec()
+    balanced_ensemble_scenario(10)
 
 # size = 201
 # X, y = read_data(5, size)

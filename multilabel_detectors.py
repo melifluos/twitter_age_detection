@@ -85,7 +85,7 @@ classifiers_embedded_64 = [
 classifiers_embedded_128 = [
     OneVsRestClassifier(LogisticRegression(multi_class='ovr', solver='lbfgs', n_jobs=1, max_iter=1000), n_jobs=1),
     # KNeighborsClassifier(3),
-    OneVsRestClassifier(SVC(kernel="linear", C=0.11, probability=True)),
+    # OneVsRestClassifier(SVC(kernel="linear", C=0.11, probability=True)),
     # SVC(kernel='rbf', gamma=0.029, C=27.4, class_weight='balanced'),
     # DecisionTreeClassifier(max_depth=5),
     # this uses a random forest where: each tree is depth 5, 20 trees, split on entropy, each split uses 10% of features,
@@ -213,6 +213,16 @@ def stats_test(results):
     return results
 
 
+def read_embeddings(paths, target_path, sizes):
+    targets = utils.read_pickle(target_path)
+    y = np.array(targets['cat'])
+    all_data = []
+    for elem in zip(paths, sizes):
+        data = utils.read_public_embedding(elem[0], size=elem[1])
+        all_data.append(data)
+    return all_data, y
+
+
 def blogcatalog_scenario():
     target_path = 'local_resources/blogcatalog/y.p'
     feature_path = 'local_resources/blogcatalog/X.p'
@@ -248,6 +258,30 @@ def blogcatalog_scenario():
     # print results
     # outpath = 'results/blogcatalog/debug_test' + utils.get_timestamp() + '.csv'
     # results.to_csv(outpath, index=True)
+
+
+def blogcatalog_deepwalk_node2vec():
+    paths = ['local_resources/blogcatalog/blogcatalog128.emd',
+             'local_resources/blogcatalog/blogcatalog_p025_q025_d128.emd']
+
+    names = [['logistic_p1_q1'],
+             ['logistic_p025_q025']]
+
+    y_path = 'local_resources/blogcatalog/y.p'
+    detectors = [classifiers_embedded_128, classifiers_embedded_128]
+
+    sizes = [128, 128]
+    X, y = read_embeddings(paths, y_path, sizes)
+    n_folds = 5
+    results = run_all_datasets(X, y, names, detectors, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/blogcatalog/macro_deepwalk_node2vec' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/blogcatalog/micro_deepwalk_node2vec' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
 
 
 if __name__ == "__main__":
