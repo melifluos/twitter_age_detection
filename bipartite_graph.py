@@ -131,7 +131,7 @@ class BipartiteGraph:
         # little hack to make the right length walk
         return walks[:, :-1]
 
-    def learn_embeddings(self, walks, size, outpath):
+    def learn_embeddings(self, walks, size, outpath, window_size=10):
         """
         learn a word2vec embedding using the gensim library.
         :param walks: An array of random walks of shape (num_walks, walk_length)
@@ -143,7 +143,7 @@ class BipartiteGraph:
         walk_str = walks.astype(str)
         walk_list = walk_str.tolist()
 
-        model = Word2Vec(walk_list, size=size, window=10, min_count=0, sg=1, workers=4,
+        model = Word2Vec(walk_list, size=size, window=window_size, min_count=0, sg=1, workers=4,
                          iter=5)
         model.save_word2vec_format(outpath)
 
@@ -230,5 +230,23 @@ def scenario_build_balanced7_embeddings():
     df.to_csv('resources/test/balanced7_walks.csv', index=False, header=None)
 
 
+def scenario_vary_window_embeddings():
+    print 'reading data'
+    x, y = utils.read_data('resources/test/balanced7_100_thresh_X.p', 'resources/test/balanced7_100_thresh_y.p', 1)
+    s = datetime.now()
+    g = BipartiteGraph(x)
+    print 'building edges'
+    g.build_edge_array()
+    print 'generating walks'
+    walks = g.generate_walks(10, 80)
+    df = pd.DataFrame(walks)
+    df.to_csv('resources/test/balanced7_walks.csv', index=False, header=None)
+    for walk_length in np.arange(1, 10):
+        print 'embedding window length {}'.format(walk_length)
+        g.learn_embeddings(walks, 128, 'resources/test/balanced7_window' + str(walk_length) + '.emd', walk_length)
+        print datetime.now() - s, ' s'
+        print walks.shape
+
+
 if __name__ == '__main__':
-    scenario_build_balanced6_embeddings()
+    scenario_vary_window_embeddings()

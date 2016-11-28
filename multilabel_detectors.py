@@ -26,7 +26,7 @@ __author__ = 'benchamberlain'
 names = [
     "Logistic_Regression",
     # "Nearest_Neighbors",
-    "Linear_SVM",
+    # "Linear_SVM",
     # "RBF_SVM",
     # "Decision_Tree",
     # "Random_Forest"
@@ -214,8 +214,7 @@ def stats_test(results):
 
 
 def read_embeddings(paths, target_path, sizes):
-    targets = utils.read_pickle(target_path)
-    y = np.array(targets['cat'])
+    y = utils.read_pickle(target_path)
     all_data = []
     for elem in zip(paths, sizes):
         data = utils.read_public_embedding(elem[0], size=elem[1])
@@ -286,7 +285,7 @@ def blogcatalog_deepwalk_node2vec():
 
 if __name__ == "__main__":
     s = datetime.datetime.now()
-    blogcatalog_scenario()
+    blogcatalog_deepwalk_node2vec()
     print datetime.datetime.now() - s
     # X, y = read_data(5)
 

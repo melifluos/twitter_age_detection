@@ -366,8 +366,53 @@ def balanced6_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
+def balanced7_small_scenario():
+    names = [['logistic']]
+    x_path = 'resources/test/balanced7_100_thresh_X.p'
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+
+    # target = utils.read_target(y_path)
+    n_folds = 3
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+    results = run_all_datasets([x], y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+def balanced7_small_window_scenario():
+    names = [['logistic']]
+    x_path = 'resources/test/balanced7_100_thresh_X.p'
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+    embedding_paths = []
+    for i in np.arange(1, 10):
+        embedding_paths.append('resources/test/balanced7_window' + str(i) + '.emd')
+        names.append(['logistic_window' + str(i)])
+
+    sizes = [128]*10
+    x_emd, _ = read_embeddings(embedding_paths, y_path, sizes)
+    n_folds = 3
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+    results = run_all_datasets([x] + [x_emd], y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_windows_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_windows_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+
+
 if __name__ == "__main__":
-    balanced_ensemble_scenario(10)
+    balanced7_small_scenario()
 
 # size = 201
 # X, y = read_data(5, size)
