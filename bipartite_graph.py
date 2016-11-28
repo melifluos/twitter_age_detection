@@ -227,8 +227,8 @@ def scenario_build_balanced7_embeddings():
     print datetime.now() - s, ' s'
     print walks.shape
     df = pd.DataFrame(walks)
-    df.to_csv('resources/test/balanced6_walks.csv', index=False, header=None)
+    df.to_csv('resources/test/balanced7_walks.csv', index=False, header=None)
 
 
 if __name__ == '__main__':
-    scenario_build_balanced7_embeddings()
+    scenario_build_balanced6_embeddings()

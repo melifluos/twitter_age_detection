@@ -139,25 +139,6 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     return y_pred, results
 
 
-# def read_data(threshold, size):
-#     """
-#     reads the features and target variables
-#     :return:
-#     """
-#     x_path = 'resources/test/X_large.p'
-#     y_path = 'resources/test/y_large.p'
-#     targets = utils.read_pickle(y_path)
-#     y = np.array(targets['cat'])
-#     X = utils.read_pickle(x_path)
-#     X1, cols = utils.remove_sparse_features(X, threshold=threshold)
-#     print X1.shape
-#     X2 = utils.read_embedding('local_resources/roberto_embeddings/item.factors.200.01reg.200iter', targets, size=size)
-#     X3 = utils.read_embedding('local_resources/roberto_embeddings/item.factors.200.001reg.200iter', targets, size=size)
-#     # X3 = utils.read_embedding('resources/walks.emd', targets, size=64)
-#     X = [X1, X2, X3]
-#     return X, y
-
-
 def run_all_datasets(datasets, y, names, classifiers, n_folds):
     """
     Loop through a list of datasets running potentially numerous classifiers on each
@@ -291,7 +272,7 @@ def bipartite_scenario():
     y_path = 'resources/test/y.p'
 
     sizes = [128, 128]
-    X, y = read_embeddings(paths, y_path, sizes)
+    X, y = utils.read_embeddings(paths, y_path, sizes)
     n_folds = 5
     results = run_all_datasets(X, y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
@@ -330,16 +311,16 @@ def ensemble_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
-def balanced_ensemble_scenario():
-    deepwalk_path = 'resources/test/test128.emd'
+def balanced_ensemble_scenario(threshold):
+    deepwalk_path = 'resources/test/balanced7.emd'
 
     names = [['logistic'], ['logistic_deepwalk'], ['ensemble']]
-    y_path = 'resources/test/y.p'
-    x_path = 'resources/test/X.p'
+    y_path = 'resources/test/balanced7y.p'
+    x_path = 'resources/test/balanced7X.p'
 
     target = utils.read_target(y_path)
 
-    x, y = utils.read_data(x_path, y_path, threshold=1)
+    x, y = utils.read_data(x_path, y_path, threshold=threshold)
     x_deepwalk = utils.read_embedding(deepwalk_path, target, 128)
     all_features = np.concatenate((x.toarray(), x_deepwalk), axis=1)
 
@@ -350,8 +331,8 @@ def balanced_ensemble_scenario():
     results = utils.stats_test(all_results)
     print 'macro', results[0]
     print 'micro', results[1]
-    macro_path = 'results/age/ensemble_macro' + utils.get_timestamp() + '.csv'
-    micro_path = 'results/age/ensemble_micro' + utils.get_timestamp() + '.csv'
+    macro_path = 'results/age/balanced7_ensemble_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_ensemble_micro' + utils.get_timestamp() + '.csv'
     results[0].to_csv(macro_path, index=True)
     results[1].to_csv(micro_path, index=True)
 
@@ -375,8 +356,31 @@ def balanced6_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
+def blogcatalog_deepwalk_node2vec():
+    paths = ['local_resources/blogcatalog/blogcatalog128.emd',
+             'local_resources/blogcatalog/blogcatalog_p025_q025_d128.emd']
+
+    names = [['logistic_p1_q1'],
+             ['logistic_p025_q025']]
+
+    y_path = 'local_resources/blogcatalog/y.p'
+
+    sizes = [128, 128]
+    X, y = utils.read_embeddings(paths, y_path, sizes)
+    n_folds = 5
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/blogcatalog/macro_deepwalk_node2vec' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/blogcatalog/micro_deepwalk_node2vec' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
 if __name__ == "__main__":
-    balanced6_scenario()
+    blogcatalog_deepwalk_node2vec()
 
 # size = 201
 # X, y = read_data(5, size)

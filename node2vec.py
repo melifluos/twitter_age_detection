@@ -83,7 +83,7 @@ class Graph:
             print 'Walk iteration:'
             for walk_iter in range(num_walks):
                 print str(walk_iter + 1), '/', str(num_walks)
-                random.shuffle(nodes)  # why is this necessary?
+                random.shuffle(nodes)  # why is this necessary? It improves the speed of downstream SGD convergence
                 for count, node in enumerate(nodes):
                     walk = self.node2vec_walk(walk_length=walk_length, start_node=node)
                     writer.writerow(walk)

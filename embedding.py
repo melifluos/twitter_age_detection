@@ -8,7 +8,7 @@ import networkx as nx
 import node2vec
 import age_detector
 import utils
-# import gensim
+import gensim
 import csv
 import datetime
 
@@ -106,7 +106,7 @@ def main1(size, num_walks, walk_len, paths):
         nx_G[edge[0]][edge[1]]['weight'] = 1
     nx_G = nx_G.to_undirected()
     print 'creating node2vec graph object'
-    G = node2vec.Graph(nx_G, False, 1, 1)
+    G = node2vec.Graph(nx_G, False, 0.25, 0.25)
     print 'pre-processing transition probabilites'
     G.preprocess_transition_probs()
     G.output_walks(num_walks=num_walks, walk_length=walk_len, path=paths[2])
@@ -127,14 +127,20 @@ def read_data(threshold):
 
 
 def scenario_generate_public_embeddings(size=128):
-    inpaths = ['local_resources/blogcatalog/X.p', 'local_resources/flickr/X.p',
-               'local_resources/youtube/X.p']
+    inpaths = ['local_resources/blogcatalog/blogcatalog.edgelist', 'local_resources/flickr/flickr.edgelist',
+               'local_resources/youtube/youtube.edgelist']
     outpaths = ['local_resources/blogcatalog/blogcatalog128.emd', 'local_resources/flickr/flickr128.emd',
                 'local_resources/youtube/youtube128.emd']
     walkpaths = ['local_resources/blogcatalog/walks.csv', 'local_resources/flickr/walks.csv',
                  'local_resources/youtube/walks.csv']
     for paths in zip(inpaths, outpaths, walkpaths):
         main(size=size, num_walks=10, walk_len=80, paths=paths)
+
+
+def scenario_generate_blogcatalog_embedding(size=128):
+    paths = ['local_resources/blogcatalog/blogcatalog.edgelist', 'local_resources/blogcatalog/blogcatalog_p025_q025_d128.emd',
+             'local_resources/blogcatalog/p025_q025_d128_walks.csv']
+    main1(size=size, num_walks=10, walk_len=80, paths=paths)
 
 
 def scenario_generate_small_age_detection_embedding():
@@ -151,5 +157,9 @@ def scenario_generate_small_age_detection_embedding():
 
 if __name__ == '__main__':
     s = datetime.datetime.now()
-    scenario_generate_public_embeddings(128)
+    scenario_generate_blogcatalog_embedding(size=128)
+    # import pandas as pd
+    # walks = pd.read_csv('local_resources/blogcatalog/p025_q025_d128_walks.csv', header=None, index_col=0, skiprows=1)
+    # print walks.head()
+    # learn_embeddings(walks, 128, 'local_resources/blogcatalog/p025_q025_d128_walks.emd')
     print 'ran in {0} s'.format(datetime.datetime.now() - s)
