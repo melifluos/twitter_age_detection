@@ -18,6 +18,7 @@ from sklearn.metrics import f1_score, make_scorer
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 
+
 # x_path = 'resources/X.p'
 # y_path = 'resources/y.p'
 # X = read_pickle(x_path)
@@ -26,31 +27,19 @@ from sklearn.linear_model import LogisticRegression
 
 
 def f1(x):
-    """
-    Test function that we will optimize. This is a simple sinusoidal function
-    whose maximum should be found very quickly.
-    """
     clf = SVC(kernel="linear", C=x)
     pred = run_cv_pred(X, y, clf, n_folds=2)
     return f1_score(y, pred, average='macro')
 
 
 def f2(x):
-    """
-    Test function that we will optimize. This is a simple sinusoidal function
-    whose maximum should be found very quickly.
-    """
     clf = RandomForestClassifier(max_depth=5, n_estimators=20, criterion='entropy', max_features=x, n_jobs=-1)
     pred = run_cv_pred(X, y, clf, n_folds=2)
     return f1_score(y, pred, average='macro')
 
 
 def f3(x):
-    """
-    Test function that we will optimize. This is a simple sinusoidal function
-    whose maximum should be found very quickly.
-    """
-    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=-1, max_iter=1000, C=x)
+    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=1, max_iter=1000, C=x)
     pred = run_cv_pred(X, y, clf, n_folds=3)
     return f1_score(y, pred, average='macro')
 
@@ -58,11 +47,11 @@ def f3(x):
 def main():
     """Run the demo."""
     # grab a test function
-    bounds = [0.001, 0.15]
-    x = np.linspace(bounds[0], bounds[1], 500)
+    bounds = [0.001, 100]
+    x = np.linspace(bounds[0], bounds[1], 1000)
 
     # solve the model
-    xbest, model, info = solve_bayesopt(f2, bounds, niter=30, verbose=True)
+    xbest, model, info = solve_bayesopt(f3, bounds, niter=30, verbose=True)
 
     # make some predictions
     # mu, s2 = model.predict(x[:, None])
@@ -92,6 +81,32 @@ def report(grid_scores, n_top=3):
 
 svm_param_dist = {'C': expon(scale=100), 'gamma': expon(scale=.1),
                   'kernel': ['rbf'], 'class_weight': ['balanced', None]}
+
+
+def run_pybo():
+    x_path = 'resources/test/balanced7_100_thresh_X.p'
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+    targets = utils.read_pickle(y_path)
+    X1 = utils.read_pickle(x_path)
+    X2 = utils.read_embedding('resources/test/balanced7_d64_window5.emd', targets, size=64)
+    X3 = utils.read_embedding('resources/test/balanced7_window6.emd', targets, size=128)
+    X = [X1, X2, X3]
+    names = ['no embedding', '64 embedding', '128 embedding']
+    y = np.array(targets['cat'])
+    n_iter_search = 20
+    clf = LogisticRegression(solver='lbfgs', n_jobs=1, max_iter=1000)
+    logistic_param_dist = {'C': expon(scale=100), 'multi_class': ['ovr', 'multinomial']}
+    scorer = make_scorer(f1_score, average='macro')
+    random_search = RandomizedSearchCV(clf, param_distributions=logistic_param_dist,
+                                       n_iter=n_iter_search, scoring=scorer)
+
+    start = time()
+    for i, features in enumerate(X):
+        print names[i]
+        random_search.fit(features, y)
+        print("RandomizedSearchCV took %.2f seconds for %d candidates"
+              " parameter settings." % ((time() - start), n_iter_search))
+        report(random_search.grid_scores_)
 
 
 def run_RF_random_search():

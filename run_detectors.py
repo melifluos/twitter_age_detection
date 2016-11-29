@@ -55,7 +55,7 @@ names128 = [
 ]
 
 classifiers = [
-    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=1, max_iter=1000),
+    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=1, max_iter=1000, C=1.8),
     # KNeighborsClassifier(3),
     # SVC(kernel="linear", C=0.0073),
     # SVC(kernel='rbf', gamma=0.011, C=9.0, class_weight='balanced'),
@@ -66,7 +66,7 @@ classifiers = [
 ]
 
 classifiers_embedded_64 = [
-    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=1, max_iter=1000),
+    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=1, max_iter=1000, C=3.4),
     # KNeighborsClassifier(3),
     # SVC(kernel="linear", C=0.11),
     # SVC(kernel='rbf', gamma=0.018, C=31, class_weight='balanced'),
@@ -77,7 +77,7 @@ classifiers_embedded_64 = [
 ]
 
 classifiers_embedded_128 = [
-    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=1, max_iter=1000),
+    LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=1, max_iter=1000, C=3.9),
     # KNeighborsClassifier(3),
     # SVC(kernel="linear", C=0.11),
     # SVC(kernel='rbf', gamma=0.029, C=27.4, class_weight='balanced'),
