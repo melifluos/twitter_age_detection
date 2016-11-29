@@ -240,10 +240,10 @@ def scenario_vary_window_embeddings():
     print 'generating walks'
     walks = g.generate_walks(10, 80)
     df = pd.DataFrame(walks)
-    df.to_csv('resources/test/balanced7_walks.csv', index=False, header=None)
+    df.to_csv('resources/test/balanced7_100_thresh_walks.csv', index=False, header=None)
     for walk_length in np.arange(1, 10):
         print 'embedding window length {}'.format(walk_length)
-        g.learn_embeddings(walks, 128, 'resources/test/balanced7_window' + str(walk_length) + '.emd', walk_length)
+        g.learn_embeddings(walks, 64, 'resources/test/balanced7_d64_window' + str(walk_length) + '.emd', walk_length)
         print datetime.now() - s, ' s'
         print walks.shape
 

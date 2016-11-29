@@ -176,6 +176,27 @@ def read_embeddings(paths, target_path, sizes):
     return all_data, y
 
 
+def build_ensembles(data, groups):
+    """
+    generates ensembles by columnwise concatenating arrays from a list
+    :param data: A list of numpy arrays
+    :param groups: a list of lists of indices into group. Each sub list represents the data sets to group together
+    eg. [[1,2], [1,2,3]] will create 2 ensembles, the first containing the first and second data sets etc.
+    :return: A list of numpy arrays where each array is an input to a classifier
+    """
+    ensemble_output = []
+    for group in groups:
+        ensemble = None
+        for count, idx in enumerate(group):
+            if count == 0:
+                ensemble = data[idx - 1]
+            else:
+                ensemble = np.concatenate((ensemble, data[idx - 1]), axis=1)
+        ensemble_output.append(ensemble)
+
+    return ensemble_output
+
+
 def roberto_scenario1():
     paths = ['local_resources/roberto_embeddings/item.factors.200.01reg.200iter',
              'local_resources/roberto_embeddings/item.factors.200.001reg.200iter',
@@ -388,17 +409,21 @@ def balanced7_small_scenario():
 def balanced7_small_window_scenario():
     names = [['logistic']]
     x_path = 'resources/test/balanced7_100_thresh_X.p'
-    y_path = 'resources/test/balanced7_100_thresh_y.p'
+    # y_path = 'resources/test/balanced7_100_thresh_y.p'
+    y_path = 'resources/test/tempy.p'
     embedding_paths = []
     for i in np.arange(1, 10):
         embedding_paths.append('resources/test/balanced7_window' + str(i) + '.emd')
         names.append(['logistic_window' + str(i)])
 
-    sizes = [128]*10
-    x_emd, _ = read_embeddings(embedding_paths, y_path, sizes)
+    sizes = [128] * 10
+    x_emd, y = read_embeddings(embedding_paths, y_path, sizes)
+    ensembles = build_ensembles(x_emd, [[1, 2], [1, 2, 3]])
     n_folds = 3
     x, y = utils.read_data(x_path, y_path, threshold=1)
-    results = run_all_datasets([x] + [x_emd], y, names, classifiers, n_folds)
+    X = x_emd[0:2] + [x_emd[5]] + ensembles
+    new_names = names[0:2] + [names[6]] + [['ensemble_1_2'], ['ensemble_1_2_3']]
+    results = run_all_datasets(X, y, new_names, classifiers, n_folds)
     all_results = utils.merge_results(results)
     results = utils.stats_test(all_results)
     print 'macro', results[0]
@@ -409,29 +434,81 @@ def balanced7_small_window_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
+def balanced7_small_window_ensemble_scenario():
+    names = []
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+    embedding_paths = []
+    for i in np.arange(1, 10):
+        embedding_paths.append('resources/test/balanced7_window' + str(i) + '.emd')
+        names.append(['logistic_window' + str(i)])
+
+    sizes = [128] * 10
+    x_emd, y = read_embeddings(embedding_paths, y_path, sizes)
+    ensembles = build_ensembles(x_emd, [[1, 2], [1, 2, 3]])
+    n_folds = 5
+    X = x_emd[0:3] + [x_emd[5]] + ensembles
+    new_names = names[0:3] + [names[5]] + [['ensemble_1_2'], ['ensemble_1_2_3']]
+    results = run_all_datasets(X, y, new_names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_windows_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_windows_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+def balanced7_small_window_64_128_scenario():
+    names = []
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+    embedding_paths = []
+    for i in np.arange(1, 10):
+        embedding_paths.append('resources/test/balanced7_window' + str(i) + '.emd')
+        names.append(['logistic_window128_' + str(i)])
+
+    for i in np.arange(1, 10):
+        embedding_paths.append('resources/test/balanced7_d64_window' + str(i) + '.emd')
+        names.append(['logistic_window64_' + str(i)])
+
+    sizes = [128] * 9 + [64] * 9
+    x_emd, y = read_embeddings(embedding_paths, y_path, sizes)
+    ensembles = build_ensembles(x_emd, [[10, 11], [10, 11, 12], [11, 13], [11, 15]])
+    n_folds = 5
+    X = x_emd + ensembles
+    new_names = names + [['ensemble64_1_2'], ['ensemble64_1_2_3'], ['ensemble64_2_4'], ['ensemble64_2_6']]
+    results = run_all_datasets(X, y, new_names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_windows_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_windows_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
 
 
 if __name__ == "__main__":
-    balanced7_small_scenario()
+    balanced7_small_window_64_128_scenario()
 
-# size = 201
-# X, y = read_data(5, size)
-# print X[0].shape
-# print y.shape
-# n_folds = 5
-# print 'without embedding'
-# results = run_detectors(X[0], y, names, classifiers, n_folds)
-# print results
-# # print 'with 64 embedding'
-# print 'their one'
-# results64 = run_detectors(X[1], y, names64, classifiers_embedded_128, n_folds)
-# # print 'with 128 embedding'
-# print 'our one'
-# results128 = run_detectors(X[2], y, names128, classifiers_embedded_128, n_folds)
-# all_results = merge_results([results, results64, results128])
+    # size = 201
+    # X, y = read_data(5, size)
+    # print X[0].shape
+    # print y.shape
+    # n_folds = 5
+    # print 'without embedding'
+    # results = run_detectors(X[0], y, names, classifiers, n_folds)
+    # print results
+    # # print 'with 64 embedding'
+    # print 'their one'
+    # results64 = run_detectors(X[1], y, names64, classifiers_embedded_128, n_folds)
+    # # print 'with 128 embedding'
+    # print 'our one'
+    # results128 = run_detectors(X[2], y, names128, classifiers_embedded_128, n_folds)
+    # all_results = merge_results([results, results64, results128])
 
-# np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
-# print accuracy(y, y_pred)
-#
-# unique, counts = np.unique(y_pred, return_counts=True)
-# print np.asarray((unique, counts)).T
+    # np.savetxt('y_pred.csv', y_pred, delimiter=' ', header='cat')
+    # print accuracy(y, y_pred)
+    #
+    # unique, counts = np.unique(y_pred, return_counts=True)
+    # print np.asarray((unique, counts)).T
