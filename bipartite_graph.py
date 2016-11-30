@@ -17,16 +17,19 @@ class BipartiteGraph:
     A binary graph
     """
 
-    def __init__(self, adj):
-        self.adj = adj.tocsr()
-        self.row_deg = np.array(adj.sum(axis=1), dtype=int).squeeze()
-        self.col_deg = np.array(adj.sum(axis=0), dtype=int).squeeze()
-        self.n_rows = len(self.row_deg)
-        self.n_cols = len(self.col_deg)
-        self.row_edges = np.zeros(shape=(self.n_rows, max(self.row_deg)), dtype=np.uint32)
-        self.col_edges = np.zeros(shape=(self.n_cols, max(self.col_deg)), dtype=np.uint32)
-        print 'generated row_edges of shape {0} and column edges of shape {1}'.format(self.row_edges.shape,
-                                                                                      self.col_edges.shape)
+    def __init__(self, adj=np.array([])):
+        try:
+            self.adj = adj.tocsr()
+            self.row_deg = np.array(adj.sum(axis=1), dtype=int).squeeze()
+            self.col_deg = np.array(adj.sum(axis=0), dtype=int).squeeze()
+            self.n_rows = len(self.row_deg)
+            self.n_cols = len(self.col_deg)
+            self.row_edges = np.zeros(shape=(self.n_rows, max(self.row_deg)), dtype=np.uint32)
+            self.col_edges = np.zeros(shape=(self.n_cols, max(self.col_deg)), dtype=np.uint32)
+            print 'generated row_edges of shape {0} and column edges of shape {1}'.format(self.row_edges.shape,
+                                                                                          self.col_edges.shape)
+        except:
+            print 'initialisation not complete, probably because no sparse matrix was passed to the constructor'
 
     def build_edge_array(self):
         """
@@ -104,7 +107,7 @@ class BipartiteGraph:
         generate random walks
         :param num_walks the number of random walks per vertex
         :param walk_length the length of each walk
-        :return:
+        :return: A numpy array of shape = (n_vertices * num_walks, walk_length)
         """
         assert walk_length % 2 == 0
         assert self.row_deg.min() > 0
@@ -248,5 +251,53 @@ def scenario_vary_window_embeddings():
         print walks.shape
 
 
+def scenario_vary_window_2step_embeddings():
+    print 'reading data'
+    x, y = utils.read_data('resources/test/balanced7_100_thresh_X.p', 'resources/test/balanced7_100_thresh_y.p', 1)
+    s = datetime.now()
+    g = BipartiteGraph(x)
+    print 'building edges'
+    g.build_edge_array()
+    print 'generating walks'
+    walks = g.generate_walks(10, 160)
+    print 'generated walks of shape', walks.shape
+    # only keep walks that land on the fans
+    walks2 = walks[:, np.arange(walks.shape[1]) % 2 == 0]
+    print 'generated 2 step walks of shape', walks2.shape
+    df = pd.DataFrame(walks)
+    df.to_csv('resources/test/balanced7_100_thresh_walks160.csv', index=False, header=None)
+    df2 = pd.DataFrame(walks2)
+    df2.to_csv('resources/test/balanced7_100_thresh_2step_walks.csv', index=False, header=None)
+    for walk_length in np.arange(1, 10):
+        print 'embedding window length {}'.format(walk_length)
+        g.learn_embeddings(walks2, 128, 'resources/test/balanced7_2step_window' + str(walk_length) + '.emd',
+                           walk_length)
+        g.learn_embeddings(walks, 128, 'resources/test/balanced7_len160_window' + str(walk_length) + '.emd',
+                           walk_length)
+        print datetime.now() - s, ' s'
+
+
+def generate_2step_embedding(window_size):
+    s = datetime.now()
+    walks_df = pd.read_csv('resources/test/balanced7_100_thresh_2step_walks.csv', header=None)
+    walks = walks_df.values
+    print 'embedding window length {}'.format(window_size)
+    g = BipartiteGraph()
+    g.learn_embeddings(walks, 128, 'resources/test/balanced7_2step_window' + str(window_size) + '.emd',
+                       window_size)
+    print datetime.now() - s, ' s'
+
+
+def generate_balanced7_embedding(window_size):
+    s = datetime.now()
+    walks_df = pd.read_csv('resources/test/balanced7_100_thresh_walks.csv', header=None)
+    walks = walks_df.values
+    print 'embedding window length {}'.format(window_size)
+    g = BipartiteGraph()
+    g.learn_embeddings(walks, 128, 'resources/test/balanced7_window' + str(window_size) + '.emd',
+                       window_size)
+    print datetime.now() - s, ' s'
+
+
 if __name__ == '__main__':
-    scenario_vary_window_embeddings()
+    generate_balanced7_embedding(10)

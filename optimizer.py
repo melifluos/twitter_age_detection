@@ -18,11 +18,15 @@ from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
-# x_path = 'resources/X.p'
-# y_path = 'resources/y.p'
-# X = read_pickle(x_path)
-# targets = read_pickle(y_path)
-# y = np.array(targets['cat'])
+x_path = 'resources/test/balanced7_100_thresh_X.p'
+y_path = 'resources/test/balanced7_100_thresh_y.p'
+targets = utils.read_pickle(y_path)
+X = utils.read_pickle(x_path)
+# X2 = utils.read_embedding('resources/test/balanced7_d64_window5.emd', targets, size=64)
+# X3 = utils.read_embedding('resources/test/balanced7_window6.emd', targets, size=128)
+# X = [X1, X2, X3]
+# names = ['no embedding', '64 embedding', '128 embedding']
+y = np.array(targets['cat'])
 
 
 def f1(x):
@@ -40,6 +44,12 @@ def f2(x):
 def f3(x):
     LogisticRegression(multi_class='multinomial', solver='lbfgs', n_jobs=1, max_iter=1000, C=x)
     pred = run_cv_pred(X, y, clf, n_folds=3)
+    return f1_score(y, pred, average='macro')
+
+
+def f4(x):
+    clf = LogisticRegression(multi_class='multinomial', C=x[0])
+    pred = run_cv_pred(X, y, clf, n_folds=2)
     return f1_score(y, pred, average='macro')
 
 
@@ -105,11 +115,11 @@ def configure_pybo(X, y):
 def main():
     """Run the demo."""
     # grab a test function
-    bounds = [0, 100]
+    bounds = [0.1, 100]
     x = np.linspace(bounds[0], bounds[1], 1000)
 
     # solve the model
-    xbest, model, info = solve_bayesopt(f3, bounds, niter=30, verbose=True)
+    xbest, model, info = solve_bayesopt(f1, bounds, niter=30, verbose=True)
 
     print xbest
 
@@ -143,7 +153,6 @@ def run_pybo():
     n_iter_search = 20
 
     logistic_param_dist = {'C': expon(scale=100), 'multi_class': ['ovr', 'multinomial']}
-
 
     start = time()
     for i, features in enumerate(X):
@@ -223,4 +232,5 @@ def run_logistic_random_search():
 
 
 if __name__ == '__main__':
-    run_pybo()
+    # run_pybo()
+    main()

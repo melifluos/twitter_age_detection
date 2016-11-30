@@ -488,8 +488,26 @@ def balanced7_small_window_64_128_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
+def two_step_scenario():
+    det_names = [['1 step'], ['2 step']]
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+    embedding_paths = ['resources/test/balanced7_window10.emd', 'resources/test/balanced7_2step_window10.emd']
+    sizes = [128] * 2
+    x_emd, y = read_embeddings(embedding_paths, y_path, sizes)
+    n_folds = 5
+    results = run_all_datasets(x_emd, y, det_names, classifiers_embedded_128, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_window10_2step_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_window10_2step_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
 if __name__ == "__main__":
-    balanced7_small_window_64_128_scenario()
+    two_step_scenario()
 
     # size = 201
     # X, y = read_data(5, size)
