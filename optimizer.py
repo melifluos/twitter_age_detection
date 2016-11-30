@@ -9,15 +9,14 @@ from operator import itemgetter
 
 from pybo import solve_bayesopt
 from sklearn.neighbors import KNeighborsClassifier
-from run_detectors import *
 import utils
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, StratifiedKFold
 from scipy.stats import randint as sp_randint
 from scipy.stats import uniform, expon
 from sklearn.metrics import f1_score, make_scorer
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
-
+from sklearn.ensemble import RandomForestClassifier
 
 # x_path = 'resources/X.p'
 # y_path = 'resources/y.p'
@@ -44,25 +43,73 @@ def f3(x):
     return f1_score(y, pred, average='macro')
 
 
+def run_cv_pred(X, y, clf, n_folds):
+    """
+    Run n-fold cross validation returning a prediction for every row of X
+    :param X: A scipy sparse feature matrix
+    :param y: The target labels corresponding to rows of X
+    :param clf: The
+    :param n_folds:
+    :return:
+    """
+    # Construct a kfolds object
+    skf = StratifiedKFold(n_splits=n_folds)
+    splits = skf.split(X, y)
+    y_pred = y.copy()
+
+    # Iterate through folds
+    for idx, (train_index, test_index) in enumerate(splits):
+        X_train, X_test = X[train_index], X[test_index]
+        y_train = y[train_index]
+        # Initialize a classifier with key word arguments
+        clf.fit(X_train, y_train)
+        try:  # Gradient boosted trees do not accept sparse matrices in the predict function currently
+            preds = clf.predict(X_test)
+        except TypeError:
+            preds = clf.predict(X_test.todense())
+        y_pred[test_index] = preds
+
+    return y_pred
+
+
+def configure_pybo(X, y):
+    """
+    A function that returns a classifier function with a single argument to be optimized
+    :param X: features
+    :param y: targets
+    :return: function to be optimised
+    """
+
+    def f(x):
+        # the pybo code passes x as an array, which scikit-learn doesn't like, hence x[0]
+        detector = LogisticRegression(solver='lbfgs', n_jobs=1, max_iter=1000, C=x[0])
+        pred = run_cv_pred(X, y, detector, n_folds=3)
+        return f1_score(y, pred, average='macro')
+
+    return f
+
+
+# def plot_pybo(info);
+#     make some predictions
+#     mu, s2 = model.predict(x[:, None])
+#
+#     # plot the final model
+#     ax = figure().gca()
+#     ax.plot_banded(x, mu, 2 * np.sqrt(s2))
+#     ax.axvline(xbest)
+#     ax.scatter(info.x.ravel(), info.y)
+#     ax.figure.canvas.draw()
+#     show()
+
+
 def main():
     """Run the demo."""
     # grab a test function
-    bounds = [0.001, 100]
+    bounds = [0, 100]
     x = np.linspace(bounds[0], bounds[1], 1000)
 
     # solve the model
     xbest, model, info = solve_bayesopt(f3, bounds, niter=30, verbose=True)
-
-    # make some predictions
-    # mu, s2 = model.predict(x[:, None])
-    #
-    # # plot the final model
-    # ax = figure().gca()
-    # ax.plot_banded(x, mu, 2 * np.sqrt(s2))
-    # ax.axvline(xbest)
-    # ax.scatter(info.x.ravel(), info.y)
-    # ax.figure.canvas.draw()
-    # show()
 
     print xbest
 
@@ -94,22 +141,26 @@ def run_pybo():
     names = ['no embedding', '64 embedding', '128 embedding']
     y = np.array(targets['cat'])
     n_iter_search = 20
-    clf = LogisticRegression(solver='lbfgs', n_jobs=1, max_iter=1000)
+
     logistic_param_dist = {'C': expon(scale=100), 'multi_class': ['ovr', 'multinomial']}
-    scorer = make_scorer(f1_score, average='macro')
-    random_search = RandomizedSearchCV(clf, param_distributions=logistic_param_dist,
-                                       n_iter=n_iter_search, scoring=scorer)
+
 
     start = time()
     for i, features in enumerate(X):
         print names[i]
-        random_search.fit(features, y)
-        print("RandomizedSearchCV took %.2f seconds for %d candidates"
+        f = configure_pybo(features, y)
+        bounds = np.array([0.0, 100.0])
+        xbest, model, info = solve_bayesopt(f, bounds.T, niter=30, verbose=True)
+        print("Bayesian optimisation took %.2f seconds for %d candidates"
               " parameter settings." % ((time() - start), n_iter_search))
-        report(random_search.grid_scores_)
+        print xbest
 
 
 def run_RF_random_search():
+    """
+    Perform scikit-learn random search over random forest parameters
+    :return:
+    """
     x_path = 'resources/test/X.p'
     y_path = 'resources/test/y.p'
     targets = utils.read_pickle(y_path)
@@ -172,4 +223,4 @@ def run_logistic_random_search():
 
 
 if __name__ == '__main__':
-    run_logistic_random_search()
+    run_pybo()
