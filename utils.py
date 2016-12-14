@@ -287,6 +287,17 @@ def persist_edgelist(edge_list, path):
     edge_list.to_csv(path, index=False, sep=" ", header=False)
 
 
+def adj2edgelist(adj):
+    """
+    converts a scipy sparse adjacency matrix to an edglist
+    :param adj: a scipy sparse adjacency matrix
+    :return: an pandas DF edgelist with columns [fan_idx, star_idx]
+    """
+    nonzeros = adj.nonzero()
+    df = pd.DataFrame({'fan_idx': nonzeros[0], 'star_idx': nonzeros[1]})
+    return df
+
+
 def persist_data(x_path, y_path, X, y):
     """
     Write the scipy csc sparse matrix X and a pandas DF y to disk
