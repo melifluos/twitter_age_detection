@@ -127,18 +127,30 @@ def read_data(threshold):
 
 
 def scenario_pq_grid():
+    """
+    Generate age embeddings for every p,q combination used in the node2vec paper writing them to file
+    :return:
+    """
     print 'creating networkx graph object'
+    inpath = 'resources/test/balanced7_100_thresh.edgelist'
     # SOMETHING IS HAPPENING HERE SO THAT THE DEGREE OF MY MATRIX AND THE DEGREE OF THIS GRAPH ARE DIFFERENT
-    nx_G = nx.read_edgelist(paths[0], nodetype=int, create_using=nx.DiGraph())
+    nx_G = nx.read_edgelist(inpath, nodetype=int, create_using=nx.DiGraph())
     for edge in nx_G.edges():
         nx_G[edge[0]][edge[1]]['weight'] = 1
     nx_G = nx_G.to_undirected()
     print 'creating node2vec graph object'
-    G = node2vec.Graph(nx_G, False, 0.25, 0.25)
-    print 'pre-processing transition probabilites'
-    G.preprocess_transition_probs()
-    G.output_walks(num_walks=num_walks, walk_length=walk_len, path=paths[2])
-    learn_embeddings_file(paths[2], size, paths[1])
+    walk_stub = 'resources/test/node2vec/walks_'
+    emd_stub = 'resources/test/node2vec/'
+    for p in [0.25, 0.5, 1, 2, 4]:
+        for q in [0.25, 0.5, 1, 2, 4]:
+            print 'running p={0}, q={1}'.format(str(p), str(q))
+            walk_path = walk_stub + str(p) + '_' + str(q) + '.csv'
+            emd_path = emd_stub + str(p) + '_' + str(q) + '.emd'
+            G = node2vec.Graph(nx_G, False, p, q)
+            print 'pre-processing transition probabilites'
+            G.preprocess_transition_probs()
+            G.output_walks(num_walks=10, walk_length=80, path=walk_path)
+            learn_embeddings_file(walk_path, size=128, outpath=emd_path)
 
 
 def scenario_generate_public_embeddings(size=128):
@@ -153,7 +165,8 @@ def scenario_generate_public_embeddings(size=128):
 
 
 def scenario_generate_blogcatalog_embedding(size=128):
-    paths = ['local_resources/blogcatalog/blogcatalog.edgelist', 'local_resources/blogcatalog/blogcatalog_p025_q025_d128.emd',
+    paths = ['local_resources/blogcatalog/blogcatalog.edgelist',
+             'local_resources/blogcatalog/blogcatalog_p025_q025_d128.emd',
              'local_resources/blogcatalog/p025_q025_d128_walks.csv']
     main1(size=size, num_walks=10, walk_len=80, paths=paths)
 
@@ -172,7 +185,7 @@ def scenario_generate_small_age_detection_embedding():
 
 if __name__ == '__main__':
     s = datetime.datetime.now()
-    scenario_generate_blogcatalog_embedding(size=128)
+    scenario_pq_grid()
     # import pandas as pd
     # walks = pd.read_csv('local_resources/blogcatalog/p025_q025_d128_walks.csv', header=None, index_col=0, skiprows=1)
     # print walks.head()
