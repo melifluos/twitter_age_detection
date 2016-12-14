@@ -126,6 +126,21 @@ def read_data(threshold):
     return X1
 
 
+def scenario_pq_grid():
+    print 'creating networkx graph object'
+    # SOMETHING IS HAPPENING HERE SO THAT THE DEGREE OF MY MATRIX AND THE DEGREE OF THIS GRAPH ARE DIFFERENT
+    nx_G = nx.read_edgelist(paths[0], nodetype=int, create_using=nx.DiGraph())
+    for edge in nx_G.edges():
+        nx_G[edge[0]][edge[1]]['weight'] = 1
+    nx_G = nx_G.to_undirected()
+    print 'creating node2vec graph object'
+    G = node2vec.Graph(nx_G, False, 0.25, 0.25)
+    print 'pre-processing transition probabilites'
+    G.preprocess_transition_probs()
+    G.output_walks(num_walks=num_walks, walk_length=walk_len, path=paths[2])
+    learn_embeddings_file(paths[2], size, paths[1])
+
+
 def scenario_generate_public_embeddings(size=128):
     inpaths = ['local_resources/blogcatalog/blogcatalog.edgelist', 'local_resources/flickr/flickr.edgelist',
                'local_resources/youtube/youtube.edgelist']

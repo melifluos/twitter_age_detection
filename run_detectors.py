@@ -494,7 +494,7 @@ def two_step_scenario():
     embedding_paths = ['resources/test/balanced7_window10.emd', 'resources/test/balanced7_2step_window10.emd']
     sizes = [128] * 2
     x_emd, y = read_embeddings(embedding_paths, y_path, sizes)
-    n_folds = 5
+    n_folds = 10
     results = run_all_datasets(x_emd, y, det_names, classifiers_embedded_128, n_folds)
     all_results = utils.merge_results(results)
     results = utils.stats_test(all_results)
