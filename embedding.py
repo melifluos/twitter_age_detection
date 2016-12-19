@@ -141,8 +141,7 @@ def scenario_pq_grid():
     print 'creating node2vec graph object'
     walk_stub = 'resources/test/node2vec/walks_'
     emd_stub = 'resources/test/node2vec/'
-    #for p in [0.25, 0.5, 1, 2, 4]:
-    for p in [2, 4]:
+    for p in [0.25, 0.5, 1, 2, 4]:
         for q in [0.25, 0.5, 1, 2, 4]:
             print 'running p={0}, q={1}'.format(str(p), str(q))
             walk_path = walk_stub + str(p) + '_' + str(q) + '.csv'

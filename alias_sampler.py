@@ -30,7 +30,7 @@ def alias_setup(probs):
     while len(smaller) > 0 and len(larger) > 0:
         small = smaller.pop()
         large = larger.pop()
-
+        # if we hit this bucket we either sample small or large
         J[small] = large
         q[large] = q[large] - (1.0 - q[small])
 
