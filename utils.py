@@ -294,7 +294,10 @@ def adj2edgelist(adj):
     :return: an pandas DF edgelist with columns [fan_idx, star_idx]
     """
     nonzeros = adj.nonzero()
-    df = pd.DataFrame({'fan_idx': nonzeros[0], 'star_idx': nonzeros[1]})
+    max_fan_idx = max(nonzeros[0])
+    # need to change the indices as the graph is bipartite and otherwise vertices will be interpreted differently
+    star_idx = nonzeros[1] + max_fan_idx + 1
+    df = pd.DataFrame({'fan_idx': nonzeros[0], 'star_idx': star_idx})
     return df
 
 
@@ -468,7 +471,11 @@ def merge_results(results_list):
 
 
 if __name__ == "__main__":
-    X, y, edge_list = preprocess_data('resources/balanced_7class_fan_star_cat.csv')
-    persist_edgelist(edge_list, 'resources/test/balanced7.edgelist')
-    persist_data('resources/test/balanced7X.p', 'resources/test/balanced7y.p',
-                 X, y)
+    # X, y, edge_list = preprocess_data('resources/balanced_7class_fan_star_cat.csv')
+    # persist_edgelist(edge_list, 'resources/test/balanced7.edgelist')
+    # persist_data('resources/test/balanced7X.p', 'resources/test/balanced7y.p',
+    #              X, y)
+
+    adj = read_pickle('resources/test/balanced7_100_thresh_X.p')
+    df = adj2edgelist(adj)
+    persist_edgelist(df, 'resources/test/balanced7_100_thresh.edgelist')
