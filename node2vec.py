@@ -68,7 +68,6 @@ class Graph:
         """
         pass
 
-
     def output_walks(self, num_walks, walk_length, path):
         """
         write the random walks to file. This is necessary for large files where memory overflows
@@ -119,12 +118,13 @@ class Graph:
         q = self.q
 
         unnormalized_probs = []
+        #  This loop uses two parameters p and q to bias the random walk
         for dst_nbr in sorted(G.neighbors(dst)):
-            if dst_nbr == src:
+            if dst_nbr == src:  # this node is the source
                 unnormalized_probs.append(G[dst][dst_nbr]['weight'] / p)
-            elif G.has_edge(dst_nbr, src):
+            elif G.has_edge(dst_nbr, src):  # this node is distance 1 from the source
                 unnormalized_probs.append(G[dst][dst_nbr]['weight'])
-            else:
+            else:  # this node is distance 2 from the source
                 unnormalized_probs.append(G[dst][dst_nbr]['weight'] / q)
         norm_const = sum(unnormalized_probs)
         normalized_probs = [float(u_prob) / norm_const for u_prob in unnormalized_probs]
@@ -143,7 +143,7 @@ class Graph:
         for idx, node in enumerate(G.nodes()):
             unnormalized_probs = [G[node][nbr]['weight'] for nbr in sorted(G.neighbors(node))]
             norm_const = sum(unnormalized_probs)
-            #norm_consts.append(norm_const)
+            # norm_consts.append(norm_const)
             normalized_probs = [float(u_prob) / norm_const for u_prob in unnormalized_probs]
             alias_nodes[node] = alias_setup(normalized_probs)
 

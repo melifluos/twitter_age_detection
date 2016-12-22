@@ -136,7 +136,7 @@ def scenario_pq_grid():
     # SOMETHING IS HAPPENING HERE SO THAT THE DEGREE OF MY MATRIX AND THE DEGREE OF THIS GRAPH ARE DIFFERENT
     nx_G = nx.read_edgelist(inpath, nodetype=int, create_using=nx.DiGraph())
     for edge in nx_G.edges():
-        nx_G[edge[0]][edge[1]]['weight'] = 1
+        nx_G[edge[0]][edge[1]]['weight'] = 1.0
     nx_G = nx_G.to_undirected()
     print 'creating node2vec graph object'
     walk_stub = 'resources/test/node2vec/walks_'
