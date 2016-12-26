@@ -7,6 +7,7 @@ from sklearn.feature_selection import SelectFromModel, chi2, SelectKBest, f_clas
 from sklearn import svm
 import utils
 from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.preprocessing import normalize
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.datasets import make_moons, make_circles, make_classification
@@ -506,9 +507,103 @@ def two_step_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
-if __name__ == "__main__":
-    two_step_scenario()
+def LINE_scenario():
+    names = [['logistic']]
+    x_path = 'LINE/linux/vec_all.txt'
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
 
+    targets = utils.read_pickle(y_path)
+    y = np.array(targets['cat'])
+    n_folds = 10
+    x = utils.read_LINE_embedding(x_path, targets)
+    results = run_all_datasets([x], y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_macro_LINE' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_micro_LINE' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+def balanced7_pq_scenario():
+    names = [['logistic']]
+    x_path = 'resources/test/balanced7_100_thresh_X.p'
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+    embedding_paths = []
+    for p in [0.25, 0.5, 1.0, 2.0, 4.0]:
+        for q in [0.25, 0.5, 1.0, 2.0, 4.0]:
+            embedding_paths.append('resources/test/node2vec/' + str(p) + '_' + str(q) + '.emd')
+            names.append(['logistic_window' + str(p) + '_' + str(q)])
+
+    sizes = [128] * len(embedding_paths)
+    x_emd, y = read_embeddings(embedding_paths, y_path, sizes)
+    n_folds = 10
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+    X = [x] + x_emd
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_pq_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_pq_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+def balanced7_pq_best_scenario():
+    names = [['logistic'], ['logistic1.0_1.0'], ['logistic2.0_0.25']]
+    x_path = 'resources/test/balanced7_100_thresh_X.p'
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+    embedding_paths = ['resources/test/node2vec/1.0_1.0.emd', 'resources/test/node2vec/2.0_0.25.emd']
+
+    sizes = [128] * len(embedding_paths)
+    x_emd, y = read_embeddings(embedding_paths, y_path, sizes)
+    n_folds = 10
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+    X = [x] + x_emd
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_pq_best_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_pq_best_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+def balanced7_normalisation_scenario():
+    names = [['x'], ['axis 1 l2'], ['axis 0 l2'], ['axis 1 l1'], ['axis 0 l1']]
+    x_path = 'resources/test/balanced7_100_thresh_X.p'
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+
+    n_folds = 10
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+
+    x1l2 = normalize(x, axis=1)
+    x0l2 = normalize(x, axis=0)
+    x1l1 = normalize(x, norm='l1', axis=1)
+    x0l1 = normalize(x, norm='l1', axis=0)
+
+    X = [x, x1l2, x0l2, x1l1, x0l1]
+
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_normalisation_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_normalisatio_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+if __name__ == "__main__":
+    balanced7_normalisation_scenario()
+    # balanced7_pq_best_scenario()
     # size = 201
     # X, y = read_data(5, size)
     # print X[0].shape

@@ -117,6 +117,10 @@ class Graph:
         p = self.p
         q = self.q
 
+        # we divide by these things.
+        assert isinstance(p, float)
+        assert isinstance(q, float)
+
         unnormalized_probs = []
         #  This loop uses two parameters p and q to bias the random walk
         for dst_nbr in sorted(G.neighbors(dst)):

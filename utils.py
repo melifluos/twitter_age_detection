@@ -358,7 +358,21 @@ def read_embedding(path, target, size):
     :param target: the target variables containing the indices to use
     :return:
     """
-    data = pd.read_csv(path, header=None, index_col=0, skiprows=1, names=np.arange(size), sep=" ")
+    data = pd.read_csv(path, header=None, index_col=0, skiprows=1, sep=" ")
+    # make sure the features are in the same order as the targets
+    data = data.ix[target['fan_idx']]
+    return data.as_matrix()
+
+
+def read_LINE_embedding(path, target):
+    """
+    Reads an embedding from text into a matrix
+    :param path: the location of the embedding file
+    :param size: the number of dimensions of the embedding eg. 64
+    :param target: the target variables containing the indices to use
+    :return:
+    """
+    data = pd.read_csv(path, header=None, index_col=0, skiprows=1, sep='\s+')
     # make sure the features are in the same order as the targets
     data = data.ix[target['fan_idx']]
     return data.as_matrix()
@@ -417,6 +431,24 @@ def read_target(path):
     targets.cat = targets.cat.astype(int)
     targets.fan_idx = targets.fan_idx.astype(int)
     return targets
+
+
+def t_grid(results):
+    """
+    create an all against all grid of significance tests
+    :param results:
+    :return:
+    """
+    nrows, ncols = results.shape
+    grid = np.zeros((nrows, nrows))
+    for row in xrange(1, nrows):
+        for col in xrange(row + 1, nrows):
+            grid[row, col] = stats.ttest_ind(a=results.ix[row, 0:-1],
+                                             b=results.ix[col, 0:-1],
+                                             equal_var=False)
+
+    tests = pd.DataFrame(index=results.index, data=grid, columns=results.columns)
+    return tests
 
 
 def stats_test(results_tuple):
