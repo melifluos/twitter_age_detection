@@ -576,9 +576,11 @@ def balanced7_pq_best_scenario():
 
 
 def balanced7_normalisation_scenario():
-    names = [['x'], ['axis 1 l2'], ['axis 0 l2'], ['axis 1 l1'], ['axis 0 l1']]
+    names = [['x'], ['axis 1 l2'], ['axis 0 l2'], ['axis 1 l1'], ['axis 0 l1'], ['emd axis 1 l2'], ['emd axis 0 l2'],
+             ['emd axis 1 l1'], ['emd axis 0 l1']]
     x_path = 'resources/test/balanced7_100_thresh_X.p'
     y_path = 'resources/test/balanced7_100_thresh_y.p'
+    targets = utils.read_pickle(y_path)
 
     n_folds = 10
     x, y = utils.read_data(x_path, y_path, threshold=1)
@@ -588,7 +590,14 @@ def balanced7_normalisation_scenario():
     x1l1 = normalize(x, norm='l1', axis=1)
     x0l1 = normalize(x, norm='l1', axis=0)
 
-    X = [x, x1l2, x0l2, x1l1, x0l1]
+    x_emd = utils.read_embedding('resources/test/node2vec/1.0_1.0.emd', targets)
+
+    x_emd1l2 = normalize(x_emd, axis=1)
+    x_emd0l2 = normalize(x_emd, axis=0)
+    x_emd1l1 = normalize(x_emd, norm='l1', axis=1)
+    x_emd0l1 = normalize(x_emd, norm='l1', axis=0)
+
+    X = [x, x1l2, x0l2, x1l1, x0l1, x_emd1l2, x_emd0l2, x_emd1l1, x_emd0l1]
 
     results = run_all_datasets(X, y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
@@ -596,7 +605,7 @@ def balanced7_normalisation_scenario():
     print 'macro', results[0]
     print 'micro', results[1]
     macro_path = 'results/age/balanced7_100_thresh_normalisation_macro' + utils.get_timestamp() + '.csv'
-    micro_path = 'results/age/balanced7_100_thresh_normalisatio_micro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_normalisation_micro' + utils.get_timestamp() + '.csv'
     results[0].to_csv(macro_path, index=True)
     results[1].to_csv(micro_path, index=True)
 

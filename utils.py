@@ -350,7 +350,7 @@ def read_roberto_embedding(path, target, size):
     return data.as_matrix()
 
 
-def read_embedding(path, target, size):
+def read_embedding(path, target, size=None):
     """
     Reads an embedding from text into a matrix
     :param path: the location of the embedding file
@@ -441,13 +441,13 @@ def t_grid(results):
     """
     nrows, ncols = results.shape
     grid = np.zeros((nrows, nrows))
-    for row in xrange(1, nrows):
+    for row in xrange(nrows):
         for col in xrange(row + 1, nrows):
-            grid[row, col] = stats.ttest_ind(a=results.ix[row, 0:-1],
-                                             b=results.ix[col, 0:-1],
-                                             equal_var=False)
+            test = stats.ttest_ind(a=results.ix[row, 0:-1],
+                                   b=results.ix[col, 0:-1], equal_var=False)
+            grid[row, col] = test.pvalue
 
-    tests = pd.DataFrame(index=results.index, data=grid, columns=results.columns)
+    tests = pd.DataFrame(index=results.index, data=grid, columns=results.index)
     return tests
 
 
@@ -487,6 +487,9 @@ def stats_test(results_tuple):
             pass
 
         output.append(results)
+
+        tests = t_grid(results)
+        print tests
 
     return output
 
