@@ -508,17 +508,26 @@ def two_step_scenario():
 
 
 def LINE_scenario():
-    names = [['logistic']]
-    x_path = 'LINE/linux/vec_all.txt'
+    names = [['logistic'], ['deepwalk'], ['LINE']]
+
+    x_path = 'resources/test/balanced7_100_thresh_X.p'
+
+    line_path = 'LINE/linux/vec_all.txt'
     y_path = 'resources/test/balanced7_100_thresh_y.p'
 
     targets = utils.read_pickle(y_path)
-    y = np.array(targets['cat'])
+
     n_folds = 10
-    x = utils.read_LINE_embedding(x_path, targets)
-    results = run_all_datasets([x], y, names, classifiers, n_folds)
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+
+    deep_x = utils.read_embedding('resources/test/node2vec/1.0_1.0.emd', targets)
+
+    line_x = utils.read_LINE_embedding(line_path, targets)
+    results = run_all_datasets([x, deep_x, line_x], y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
-    results = utils.stats_test(all_results)
+    results, tests = utils.stats_test(all_results)
+    tests[0].to_csv('results/age/balanced7_100_thresh_LINE_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv('results/age/balanced7_100_thresh_LINE_micro_pvalues' + utils.get_timestamp() + '.csv')
     print 'macro', results[0]
     print 'micro', results[1]
     macro_path = 'results/age/balanced7_100_thresh_macro_LINE' + utils.get_timestamp() + '.csv'
@@ -566,7 +575,9 @@ def balanced7_pq_best_scenario():
     X = [x] + x_emd
     results = run_all_datasets(X, y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
-    results = utils.stats_test(all_results)
+    results, tests = utils.stats_test(all_results)
+    tests[0].to_csv('results/age/balanced7_100_thresh_pq_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv('results/age/balanced7_100_thresh_pq_micro_pvalues' + utils.get_timestamp() + '.csv')
     print 'macro', results[0]
     print 'micro', results[1]
     macro_path = 'results/age/balanced7_100_thresh_pq_best_macro' + utils.get_timestamp() + '.csv'
@@ -576,7 +587,8 @@ def balanced7_pq_best_scenario():
 
 
 def balanced7_normalisation_scenario():
-    names = [['x'], ['axis 1 l2'], ['axis 0 l2'], ['axis 1 l1'], ['axis 0 l1'], ['emd axis 1 l2'], ['emd axis 0 l2'],
+    names = [['x'], ['axis 1 l2'], ['axis 0 l2'], ['axis 1 l1'], ['axis 0 l1'], ['emd'], ['emd axis 1 l2'],
+             ['emd axis 0 l2'],
              ['emd axis 1 l1'], ['emd axis 0 l1']]
     x_path = 'resources/test/balanced7_100_thresh_X.p'
     y_path = 'resources/test/balanced7_100_thresh_y.p'
@@ -597,11 +609,13 @@ def balanced7_normalisation_scenario():
     x_emd1l1 = normalize(x_emd, norm='l1', axis=1)
     x_emd0l1 = normalize(x_emd, norm='l1', axis=0)
 
-    X = [x, x1l2, x0l2, x1l1, x0l1, x_emd1l2, x_emd0l2, x_emd1l1, x_emd0l1]
+    X = [x, x1l2, x0l2, x1l1, x0l1, x_emd, x_emd1l2, x_emd0l2, x_emd1l1, x_emd0l1]
 
     results = run_all_datasets(X, y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
-    results = utils.stats_test(all_results)
+    results, tests = utils.stats_test(all_results)
+    tests[0].to_csv('results/age/balanced7_100_thresh_normalisation_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv('results/age/balanced7_100_thresh_normalisation_micro_pvalues' + utils.get_timestamp() + '.csv')
     print 'macro', results[0]
     print 'micro', results[1]
     macro_path = 'results/age/balanced7_100_thresh_normalisation_macro' + utils.get_timestamp() + '.csv'
@@ -610,8 +624,132 @@ def balanced7_normalisation_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
+def balanced7_LINE_normalisation_scenario():
+    names = [['1 deg no norm'], ['2 deg no norm'], ['1 deg feature l2'], ['2 deg feature l2'], ['ens'], ['ens l1 norm features'],
+             ['ens l1 norm data'], ['ens l2 norm features'],
+             ['ens l2 norm data'], ['deep line'], ['deepwalk']]
+    x_path = 'resources/test/balanced7_100_thresh_X.p'
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+    l1_path = 'LINE/linux/archive/vec_1st_wo_norm.txt'
+    l2_path = 'LINE/linux/archive/vec_2nd_wo_norm.txt'
+    targets = utils.read_pickle(y_path)
+
+    x1 = utils.read_LINE_embedding(l1_path, targets)
+    x2 = utils.read_LINE_embedding(l2_path, targets)
+
+    n_folds = 10
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+
+    x1a1l2 = normalize(x1, axis=1)
+    x1a0l2 = normalize(x1, axis=0)
+    x1a1l1 = normalize(x1, norm='l1', axis=1)
+    x1a0l1 = normalize(x1, norm='l1', axis=0)
+
+    x2a1l2 = normalize(x2, axis=1)
+    x2a0l2 = normalize(x2, axis=0)
+    x2a1l1 = normalize(x2, norm='l1', axis=1)
+    x2a0l1 = normalize(x2, norm='l1', axis=0)
+
+    # build ensembles
+    ens = np.concatenate((x1, x2), axis=1)
+    ens_a0l1 = np.concatenate((x1a0l1, x2a0l1), axis=1)
+    ens_a1l1 = np.concatenate((x1a1l1, x2a1l1), axis=1)
+    ens_a0l2 = np.concatenate((x1a0l2, x2a0l2), axis=1)
+    ens_a1l2 = np.concatenate((x1a1l2, x2a1l2), axis=1)
+
+    x_emd = utils.read_embedding('resources/test/node2vec/1.0_1.0.emd', targets)
+    x_emd0l2 = normalize(x_emd, axis=0)
+    deep_line = np.concatenate((x2a0l2, x_emd0l2), axis=1)
+
+    X = [x1, x2, x1a0l2, x2a0l2, ens, ens_a0l1, ens_a1l1, ens_a0l2, ens_a1l2, deep_line, x_emd]
+
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results, tests = utils.stats_test(all_results)
+    tests[0].to_csv('results/age/balanced7_100_thresh_LINE_normalisation_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv('results/age/balanced7_100_thresh_LINE_normalisation_micro_pvalues' + utils.get_timestamp() + '.csv')
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_LINE_normalisation_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_LINE_normalisation_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+def balanced7_normalised_ensemble_scenario():
+    names = [['ensemb'], ['axis 0 l2'], ['emd axis 0 l2']]
+    x_path = 'resources/test/balanced7_100_thresh_X.p'
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+    targets = utils.read_pickle(y_path)
+    l1_path = 'LINE/linux/archive/vec_1st_wo_norm.txt'
+    l2_path = 'LINE/linux/archive/vec_2nd_wo_norm.txt'
+    l1 = utils.read_LINE_embedding(l1_path, targets)
+    l2 = utils.read_LINE_embedding(l2_path, targets)
+    line1 = normalize(l1, axis=0)
+    line2 = normalize(l1, axis=0)
+
+    n_folds = 10
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+
+    x1l2 = normalize(x, axis=1)
+    x0l2 = normalize(x, axis=0)
+    x1l1 = normalize(x, norm='l1', axis=1)
+    x0l1 = normalize(x, norm='l1', axis=0)
+
+    x_emd = utils.read_embedding('resources/test/node2vec/1.0_1.0.emd', targets)
+
+    x_emd1l2 = normalize(x_emd, axis=1)
+    x_emd0l2 = normalize(x_emd, axis=0)
+    x_emd1l1 = normalize(x_emd, norm='l1', axis=1)
+    x_emd0l1 = normalize(x_emd, norm='l1', axis=0)
+
+    ensemb = np.concatenate((x0l2.toarray(), x_emd0l2), axis=1)
+    ensemb_line = np.concatenate((line2, x_emd0l2), axis=1)
+    X = [ensemb, ensemb_line, x0l2, x_emd0l2]
+
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results, tests = utils.stats_test(all_results)
+    tests[0].to_csv('results/age/balanced7_100_thresh_normalisation_deepwalk_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv('results/age/balanced7_100_thresh_normalisation_deepwalk_micro_pvalues' + utils.get_timestamp() + '.csv')
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_normalisation_deepwalk_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_normalisation_deepwalk_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+def tf_scenario():
+    names = [['logistic'], ['deepwalk'], ['tf_deepwalk']]
+
+    x_path = 'resources/test/balanced7_100_thresh_X.p'
+
+    tf_path = 'resources/test/tf_test.csv'
+    y_path = 'resources/test/balanced7_100_thresh_y.p'
+
+    targets = utils.read_pickle(y_path)
+
+    n_folds = 10
+    x, y = utils.read_data(x_path, y_path, threshold=1)
+
+    deep_x = utils.read_embedding('resources/test/node2vec/1.0_1.0.emd', targets)
+
+    tf_x = utils.read_tf_embedding(tf_path, targets)
+    results = run_all_datasets([x, deep_x, tf_x], y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results, tests = utils.stats_test(all_results)
+    tests[0].to_csv('results/age/balanced7_100_thresh_LINE_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv('results/age/balanced7_100_thresh_LINE_micro_pvalues' + utils.get_timestamp() + '.csv')
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_100_thresh_macro_LINE' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_micro_LINE' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
 if __name__ == "__main__":
-    balanced7_normalisation_scenario()
+    balanced7_LINE_normalisation_scenario()
     # balanced7_pq_best_scenario()
     # size = 201
     # X, y = read_data(5, size)

@@ -95,24 +95,6 @@ def build_model(input_units, output_units):
     return train_step, vars
 
 
-def fit(data, train_step, vars, session, batch_size=100, n_iter=2000):
-    """
-    Run the tensor flow multinomial logistic regression classifier
-    :param data: an MLdata object
-    :return:
-    """
-    pass
-
-
-def predict(vars, session, data):
-    """
-    Predict using the model defined in session
-    :param session: a tf interactive session
-    :param data: An MLdataset object
-    :return: the predictions for the current test features
-    """
-    pass
-
 
 def accuracy(y, pred):
     return sum(y == pred) / float(len(y))

@@ -378,6 +378,20 @@ def read_LINE_embedding(path, target):
     return data.as_matrix()
 
 
+def read_tf_embedding(path, target):
+    """
+    Reads an embedding from text into a matrix
+    :param path: the location of the embedding file
+    :param size: the number of dimensions of the embedding eg. 64
+    :param target: the target variables containing the indices to use
+    :return:
+    """
+    data = pd.read_csv(path, header=None, sep=' ')
+    # make sure the features are in the same order as the targets
+    data = data.ix[target['fan_idx']]
+    return data.as_matrix()
+
+
 def read_public_embedding(path, size):
     """
     Read the public data sets embeddings files
@@ -458,6 +472,7 @@ def stats_test(results_tuple):
     :return:
     """
     output = []
+    tests = []
     for idx, results in enumerate(results_tuple):
         results['mean'] = results.mean(axis=1)
         results = results.sort('mean', ascending=False)
@@ -488,10 +503,9 @@ def stats_test(results_tuple):
 
         output.append(results)
 
-        tests = t_grid(results)
-        print tests
+        tests.append(t_grid(results))
 
-    return output
+    return output, tests
 
 
 def merge_results(results_list):

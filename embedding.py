@@ -51,9 +51,11 @@ def learn_embeddings(walks, size, outpath):
     Learn embeddings by optimizing the Skipgram objective using SGD.
     '''
     walks = [map(str, walk) for walk in walks]
-
+    # runs skip-gram with negative sampling. 5 samples per training point
+    # does 5 epochs of training. Window gives the maximum distance between
+    # any input-training pair ie. the context is length 2*window + 1
     model = Word2Vec(walks, size=size, window=10, min_count=0, sg=1, workers=4,
-                     iter=5)
+                     iter=5, hs=0, negative=5)
     model.save_word2vec_format(outpath)
 
 

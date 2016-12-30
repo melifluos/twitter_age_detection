@@ -96,11 +96,19 @@ class BipartiteGraph:
         # is taking 2 steps at a time
         walks = np.zeros(shape=(self.n_rows * num_walks, walk_length + 1), dtype=np.uint32)
         walk_starts = np.tile(initial_vertices, num_walks)
-        print 'shuffling walks'
+        print 'shuffling walks to improve SGD conversion later'
         np.random.shuffle(walk_starts)
         walks[:, 0] = walk_starts
         print 'constructed random walk array of shape {0}'.format(walks.shape)
         return walks
+
+    def biased_sample(self, p, deg):
+        """
+        either samples the previous node or a different node
+        :param p: The repulsion factor - large p makes returning to the previous node less likely
+        :param deg: the degree of the current node
+        :return: either -1 for the previous vertex or an index
+        """
 
     def generate_walks(self, num_walks, walk_length):
         """
@@ -111,11 +119,7 @@ class BipartiteGraph:
         """
         assert walk_length % 2 == 0
         assert self.row_deg.min() > 0
-        # row_degs = np.tile(self.row_deg, num_walks)
-        # row_edges = np.tile(self.row_edges, (num_walks, 1))
         assert self.col_deg.min() > 0
-        # col_degs = np.tile(self.col_deg, num_walks)
-        # col_edges = np.tile(self.col_edges, (num_walks, 1))
         print 'initialising walks'
         walks = self.initialise_walk_array(num_walks, walk_length)
 
