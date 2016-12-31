@@ -195,7 +195,9 @@ def vec_translate(a, my_dict):
     return np.vectorize(my_dict.__getitem__)(a)
 
 
-ordered_walks = vec_translate(walk, dic)
+ordered_walks = vec_translate(walks, dic)
+
+del walks
 
 batch_size = 770  # PROBABLY WAY TOO BIG FOR A BATCH
 embedding_size = 128  # Dimension of the embedding vector.
