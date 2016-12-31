@@ -185,9 +185,13 @@ def scenario_generate_small_age_detection_embedding():
     print 'ran in {0} s'.format(datetime.datetime.now() - s)
 
 
+def scenario_tf_file_test():
+    learn_embeddings_file('resources/test/node2vec/walks_1.0_1.0.csv', 128, 'resources/test/node2vec_1_1_test.emd')
+
+
 if __name__ == '__main__':
     s = datetime.datetime.now()
-    scenario_pq_grid()
+    scenario_tf_file_test()
     # import pandas as pd
     # walks = pd.read_csv('local_resources/blogcatalog/p025_q025_d128_walks.csv', header=None, index_col=0, skiprows=1)
     # print walks.head()

@@ -724,7 +724,7 @@ def tf_scenario():
 
     x_path = 'resources/test/balanced7_100_thresh_X.p'
 
-    tf_path = 'resources/test/tf_test.csv'
+    tf_path = 'resources/test/tf_test1.csv'
     y_path = 'resources/test/balanced7_100_thresh_y.p'
 
     targets = utils.read_pickle(y_path)
@@ -732,24 +732,24 @@ def tf_scenario():
     n_folds = 10
     x, y = utils.read_data(x_path, y_path, threshold=1)
 
-    deep_x = utils.read_embedding('resources/test/node2vec/1.0_1.0.emd', targets)
+    deep_x = utils.read_embedding('resources/test/node2vec_1_1_test.emd', targets)
 
     tf_x = utils.read_tf_embedding(tf_path, targets)
     results = run_all_datasets([x, deep_x, tf_x], y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
     results, tests = utils.stats_test(all_results)
-    tests[0].to_csv('results/age/balanced7_100_thresh_LINE_macro_pvalues' + utils.get_timestamp() + '.csv')
-    tests[1].to_csv('results/age/balanced7_100_thresh_LINE_micro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[0].to_csv('results/age/balanced7_100_thresh_tf_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv('results/age/balanced7_100_thresh_tf_micro_pvalues' + utils.get_timestamp() + '.csv')
     print 'macro', results[0]
     print 'micro', results[1]
-    macro_path = 'results/age/balanced7_100_thresh_macro_LINE' + utils.get_timestamp() + '.csv'
-    micro_path = 'results/age/balanced7_100_thresh_micro_LINE' + utils.get_timestamp() + '.csv'
+    macro_path = 'results/age/balanced7_100_thresh_macro_tf' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_micro_tf' + utils.get_timestamp() + '.csv'
     results[0].to_csv(macro_path, index=True)
     results[1].to_csv(micro_path, index=True)
 
 
 if __name__ == "__main__":
-    balanced7_LINE_normalisation_scenario()
+    tf_scenario()
     # balanced7_pq_best_scenario()
     # size = 201
     # X, y = read_data(5, size)

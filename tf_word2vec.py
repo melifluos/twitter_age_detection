@@ -125,6 +125,7 @@ def generate_batch_tf(batch_size, num_skips, skip_window):
 def process_sentence(sentence, skip_window):
     """
     For a whole sentence of usually 80 words, generate all input-output pairs that exist within skip-window
+    For 80 words this will generate 770 pairs
     :param sentence:
     :param skip_window:
     :return:
@@ -176,12 +177,32 @@ x, y = utils.read_data(x_path, y_path, threshold=1)
 n_data, n_features = x.shape
 vocabulary_size = n_data + n_features
 
-batch_size = 770
+
+def degree_sort(x):
+    data_degs = x.sum(axis=1)
+    feature_degs = x.sum(axis=0)
+    all_degs = np.concatenate((data_degs, feature_degs.T), axis=0)
+    sorted_idx = np.argsort(-np.array(all_degs), axis=None)
+    dic = {x: idx for idx, x in enumerate(sorted_idx)}
+    reverse_idx = np.argsort(sorted_idx, axis=None)
+    return dic, reverse_idx
+
+
+dic, reverse_idx = degree_sort(x)
+
+
+def vec_translate(a, my_dict):
+    return np.vectorize(my_dict.__getitem__)(a)
+
+
+ordered_walks = vec_translate(walk, dic)
+
+batch_size = 770  # PROBABLY WAY TOO BIG FOR A BATCH
 embedding_size = 128  # Dimension of the embedding vector.
 skip_window = 5  # How many words to consider left and right.
 num_skips = 4  # How many times to reuse an input to generate a label.
-num_sampled = 5  # Number of negative examples to sample.
-num_steps = n_data * 5
+num_sampled = 385  # Number of negative examples to sample for the batch - NEED TO CHECK EXACTLY WHAT THIS IS DOING
+num_steps = n_data
 
 # We pick a random validation set to sample nearest neighbors. Here we limit the
 # validation samples to the words that have a low numeric ID, which by
@@ -223,7 +244,7 @@ with graph.as_default():
                        num_classes=vocabulary_size))
 
     # Construct the SGD optimizer using a learning rate of 1.0.
-    optimizer = tf.train.GradientDescentOptimizer(1.0).minimize(loss)
+    optimizer = tf.train.GradientDescentOptimizer(0.025).minimize(loss)
 
     # Compute the cosine similarity between minibatch examples and all embeddings.
     norm = tf.sqrt(tf.reduce_sum(tf.square(embeddings), 1, keep_dims=True))
@@ -247,7 +268,7 @@ with tf.Session(graph=graph) as session:
 
     average_loss = 0
     for step in xrange(num_steps):
-        batch_inputs, batch_labels = generate_batch(skip_window, walks)
+        batch_inputs, batch_labels = generate_batch(skip_window, ordered_walks)
         feed_dict = {train_inputs: batch_inputs, train_labels: batch_labels}
 
         # We perform one update step by evaluating the optimizer op (including it
@@ -275,7 +296,9 @@ with tf.Session(graph=graph) as session:
             #             log_str = "%s %s," % (log_str, close_word)
             #         print(log_str)
     final_embeddings = normalized_embeddings.eval()
-    np.savetxt('resources/test/tf_test.csv', final_embeddings)
+    # put back in the same order as the labels
+    final_embeddings = final_embeddings[reverse_idx]
+    np.savetxt('resources/test/tf_test2.csv', final_embeddings)
     print
     'ran in {0} s'.format(datetime.datetime.now() - s)
 
