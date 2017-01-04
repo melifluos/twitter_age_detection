@@ -29,14 +29,14 @@ n_data, n_features = x.shape
 vocab_size = n_data + n_features
 # define the noise distribution
 _, unigrams = np.unique(walks, return_counts=True)
-words_per_epoch = n_data*770
+words_per_epoch = n_data * 770
 
 # Set the parameters
 batch_size = 16
 embedding_size = 128  # Dimension of the embedding vector.
 skip_window = 10  # How many words to consider left and right.
 num_samples = batch_size * 5  # Number of negative examples to sample for the batch
-num_steps = 1e6
+num_steps = 1000000
 epochs_to_train = 1
 initial_learning_rate = 1.0
 global_step = tf.Variable(0, name="global_step")
@@ -55,13 +55,15 @@ def optimize(loss):
     words_to_train = float(words_per_epoch * epochs_to_train)
     lr = initial_learning_rate * tf.maximum(
         0.0001, 1.0 - tf.cast(n_words, tf.float32) / words_to_train)
+    if n_words % 1600 == 0:
+        print('processed', n_words, 'pairs. Current learning rate is ', lr)
     optimizer = tf.train.GradientDescentOptimizer(lr)
     train = optimizer.minimize(loss, gate_gradients=optimizer.GATE_NONE)
     return train
 
 
 # produce batch of data
-def generate_batch(window, data, batch_size):
+def generate_batch(skip_window, data, batch_size):
     """
     A generator that produces the next batch of examples and labels
     :param window: The largest distance between an example and a label
@@ -79,12 +81,12 @@ def generate_batch(window, data, batch_size):
             # enumerate takes a second arg, which sets the starting point, this makes pos and pos2 line up
             for pos2, word2 in enumerate(sentence[start: pos + skip_window + 1], start):
                 if pos2 != pos:
-                    while len(examples) < batch_size:
-                        examples.append(word)
-                        labels.append(word2)
-                    yield examples, labels
-                    examples = []
-                    labels = []
+                    examples.append(word)
+                    labels.append([word2])
+                    if len(examples) == batch_size:
+                        yield examples, labels
+                        examples = []
+                        labels = []
         row_index = (row_index + 1) % data.shape[0]
 
 
