@@ -724,12 +724,12 @@ def tf_scenario():
 
     x_path = 'resources/test/balanced7_100_thresh_X.p'
 
-    tf_path = 'resources/test/tf_test1.csv'
+    tf_path = 'resources/test/tf_test2.csv'
     y_path = 'resources/test/balanced7_100_thresh_y.p'
 
     targets = utils.read_pickle(y_path)
 
-    n_folds = 10
+    n_folds = 3
     x, y = utils.read_data(x_path, y_path, threshold=1)
 
     deep_x = utils.read_embedding('resources/test/node2vec_1_1_test.emd', targets)

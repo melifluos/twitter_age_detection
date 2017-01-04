@@ -143,11 +143,25 @@ def process_sentence(sentence, skip_window):
     return batch, labels
 
 
+# def generate_batch(skip_window, data):
+#     global data_index
+#     sentence = data[data_index, :]
+#     data_index = (data_index + 1) % data.shape[0]
+#     return process_sentence(sentence, skip_window)
+
+
 def generate_batch(skip_window, data):
-    global data_index
-    sentence = data[data_index, :]
-    data_index = (data_index + 1) % data.shape[0]
-    return process_sentence(sentence, skip_window)
+    row_index = 0
+    while True:
+        sentence = data[row_index, :]
+        for pos, word in enumerate(sentence):
+            # now go over all words from the window, predicting each one in turn
+            start = max(0, pos - skip_window)
+            # enumerate takes a second arg, which sets the starting point, this makes pos and pos2 line up
+            for pos2, word2 in enumerate(sentence[start: pos + skip_window + 1], start):
+                if pos2 != pos:
+                    yield [word], [[word2]]
+        row_index = (row_index + 1) % data.shape[0]
 
 
 # filename = maybe_download('text8.zip', 31344016)
@@ -199,12 +213,15 @@ ordered_walks = vec_translate(walks, dic)
 
 del walks
 
-batch_size = 770  # PROBABLY WAY TOO BIG FOR A BATCH
+batch_size = 1  # PROBABLY WAY TOO BIG FOR A BATCH
 embedding_size = 128  # Dimension of the embedding vector.
-skip_window = 5  # How many words to consider left and right.
+skip_window = 10  # How many words to consider left and right.
 num_skips = 4  # How many times to reuse an input to generate a label.
-num_sampled = 385  # Number of negative examples to sample for the batch - NEED TO CHECK EXACTLY WHAT THIS IS DOING
-num_steps = n_data
+num_sampled = 5  # Number of negative examples to sample for the batch - NEED TO CHECK EXACTLY WHAT THIS IS DOING
+num_steps = n_data * 10
+
+batch_gen = generate_batch(skip_window, ordered_walks)
+
 
 # We pick a random validation set to sample nearest neighbors. Here we limit the
 # validation samples to the words that have a low numeric ID, which by
@@ -270,7 +287,7 @@ with tf.Session(graph=graph) as session:
 
     average_loss = 0
     for step in xrange(num_steps):
-        batch_inputs, batch_labels = generate_batch(skip_window, ordered_walks)
+        batch_inputs, batch_labels = batch_gen.next()
         feed_dict = {train_inputs: batch_inputs, train_labels: batch_labels}
 
         # We perform one update step by evaluating the optimizer op (including it
