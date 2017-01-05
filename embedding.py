@@ -90,7 +90,7 @@ def main(size, num_walks, walk_len, paths):
     for edge in nx_G.edges():
         nx_G[edge[0]][edge[1]]['weight'] = 1
     nx_G = nx_G.to_undirected()
-    G = node2vec.Graph(nx_G, False, 1, 1)
+    G = node2vec.Graph(nx_G, False, 1.0, 1.0)
     G.preprocess_transition_probs()
     walks = G.simulate_walks(num_walks=num_walks, walk_length=walk_len)
     output_walks(walks, paths[2])
@@ -188,10 +188,18 @@ def scenario_generate_small_age_detection_embedding():
 def scenario_tf_file_test():
     learn_embeddings_file('resources/test/node2vec/walks_1.0_1.0.csv', 128, 'resources/test/node2vec_1_1_test.emd')
 
+def karate_scenario():
+    size = 8
+    num_walks = 1
+    walk_len = 10
+    paths = ['local_resources/zachary_karate/karate.edgelist', 'local_resources/zachary_karate/size8_walks1_len10.emd',
+             'local_resources/zachary_karate/walks1_len10_p1_q1.csv']
+    main(size, num_walks, walk_len, paths)
+
 
 if __name__ == '__main__':
     s = datetime.datetime.now()
-    scenario_tf_file_test()
+    karate_scenario()
     # import pandas as pd
     # walks = pd.read_csv('local_resources/blogcatalog/p025_q025_d128_walks.csv', header=None, index_col=0, skiprows=1)
     # print walks.head()
