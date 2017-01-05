@@ -625,7 +625,8 @@ def balanced7_normalisation_scenario():
 
 
 def balanced7_LINE_normalisation_scenario():
-    names = [['1 deg no norm'], ['2 deg no norm'], ['1 deg feature l2'], ['2 deg feature l2'], ['ens'], ['ens l1 norm features'],
+    names = [['1 deg no norm'], ['2 deg no norm'], ['1 deg feature l2'], ['2 deg feature l2'], ['ens'],
+             ['ens l1 norm features'],
              ['ens l1 norm data'], ['ens l2 norm features'],
              ['ens l2 norm data'], ['deep line'], ['deepwalk']]
     x_path = 'resources/test/balanced7_100_thresh_X.p'
@@ -666,8 +667,10 @@ def balanced7_LINE_normalisation_scenario():
     results = run_all_datasets(X, y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
     results, tests = utils.stats_test(all_results)
-    tests[0].to_csv('results/age/balanced7_100_thresh_LINE_normalisation_macro_pvalues' + utils.get_timestamp() + '.csv')
-    tests[1].to_csv('results/age/balanced7_100_thresh_LINE_normalisation_micro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[0].to_csv(
+        'results/age/balanced7_100_thresh_LINE_normalisation_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv(
+        'results/age/balanced7_100_thresh_LINE_normalisation_micro_pvalues' + utils.get_timestamp() + '.csv')
     print 'macro', results[0]
     print 'micro', results[1]
     macro_path = 'results/age/balanced7_100_thresh_LINE_normalisation_macro' + utils.get_timestamp() + '.csv'
@@ -710,14 +713,17 @@ def balanced7_normalised_ensemble_scenario():
     results = run_all_datasets(X, y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
     results, tests = utils.stats_test(all_results)
-    tests[0].to_csv('results/age/balanced7_100_thresh_normalisation_deepwalk_macro_pvalues' + utils.get_timestamp() + '.csv')
-    tests[1].to_csv('results/age/balanced7_100_thresh_normalisation_deepwalk_micro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[0].to_csv(
+        'results/age/balanced7_100_thresh_normalisation_deepwalk_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv(
+        'results/age/balanced7_100_thresh_normalisation_deepwalk_micro_pvalues' + utils.get_timestamp() + '.csv')
     print 'macro', results[0]
     print 'micro', results[1]
     macro_path = 'results/age/balanced7_100_thresh_normalisation_deepwalk_macro' + utils.get_timestamp() + '.csv'
     micro_path = 'results/age/balanced7_100_thresh_normalisation_deepwalk_micro' + utils.get_timestamp() + '.csv'
     results[0].to_csv(macro_path, index=True)
     results[1].to_csv(micro_path, index=True)
+
 
 def tf_scenario():
     names = [['logistic'], ['deepwalk'], ['tf_deepwalk']]
@@ -742,14 +748,77 @@ def tf_scenario():
     tests[1].to_csv('results/age/balanced7_100_thresh_tf_micro_pvalues' + utils.get_timestamp() + '.csv')
     print 'macro', results[0]
     print 'micro', results[1]
-    macro_path = 'results/age/balanced7_100_thresh_macro_tf' + utils.get_timestamp() + '.csv'
-    micro_path = 'results/age/balanced7_100_thresh_micro_tf' + utils.get_timestamp() + '.csv'
+    macro_path = 'results/age/balanced7_100_thresh_tf_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_100_thresh_tf_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+def logistic_n_features_scenario():
+    deepwalk_path = 'resources/test/balanced7.emd'
+
+    y_path = 'resources/test/balanced7y.p'
+    x_path = 'resources/test/balanced7X.p'
+
+    target = utils.read_target(y_path)
+
+    x, y = utils.read_data(x_path, y_path, threshold=0)
+    X = [normalize(x, axis=0)]
+    names = [['0']]
+    for thresh in xrange(5, 105, 5):
+        features, _ = utils.remove_sparse_features(x, thresh)
+        X.append(normalize(features, axis=0))
+        names.append([str(thresh)])
+
+    x_deepwalk = utils.read_embedding(deepwalk_path, target, 128)
+    # all_features = np.concatenate((x.toarray(), x_deepwalk), axis=1)
+    names.append(['deepwalk'])
+    X.append(x_deepwalk)
+    n_folds = 5
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results, tests = utils.stats_test(all_results)
+    tests[0].to_csv('results/age/balanced7_vary_nfeatures_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv('results/age/balanced7_vary_nfeatures_micro_pvalues' + utils.get_timestamp() + '.csv')
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_vary_nfeatures_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_vary_nfeatures__micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
+def karate_scenario():
+    deepwalk_path = 'local_resources/zachary_karate/size8_walks1_len10.emd'
+
+    y_path = 'local_resources/zachary_karate/y.p'
+    x_path = 'local_resources/zachary_karate/X.p'
+
+    target = utils.read_target(y_path)
+
+    x, y = utils.read_data(x_path, y_path, threshold=0)
+
+    names = [['logistic'], ['deepwalk']]
+
+    x_deepwalk = utils.read_embedding(deepwalk_path, target)
+    # all_features = np.concatenate((x.toarray(), x_deepwalk), axis=1)
+    X = [x_deepwalk, normalize(x, axis=0)]
+    n_folds = 2
+    results = run_all_datasets(X, y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results, tests = utils.stats_test(all_results)
+    tests[0].to_csv('results/karate/deepwalk_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv('results/karate/deepwalk_micro_pvalues' + utils.get_timestamp() + '.csv')
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/karate/deepwalk_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/karate/deepwalk_micro' + utils.get_timestamp() + '.csv'
     results[0].to_csv(macro_path, index=True)
     results[1].to_csv(micro_path, index=True)
 
 
 if __name__ == "__main__":
-    tf_scenario()
+    karate_scenario()
     # balanced7_pq_best_scenario()
     # size = 201
     # X, y = read_data(5, size)

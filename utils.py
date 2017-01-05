@@ -118,7 +118,8 @@ def remove_sparse_features(sparse_mat, threshold):
 
 def edge_list_to_sparse_mat(edge_list):
     """
-    Convert a pandas DF edge list into a scipy csc sparse matrix
+    Convert a pandas DF undirected edge list for a bipartite graph into a scipy csc sparse matrix.
+    Assumes that edges are contiguosly indexed starting at 0
     :param edge_list: A pandas DF with columns [fan_idx, star_idx]
     :return: A Columnar sparse matrix
     """
@@ -127,6 +128,22 @@ def edge_list_to_sparse_mat(edge_list):
     print 'building sparse matrix of size {0}'.format(data_shape)
     X = lil_matrix((data_shape['fan_idx'] + 1, data_shape['star_idx'] + 1), dtype=int)
     X[edge_list['fan_idx'].values, edge_list['star_idx'].values] = 1
+    return X.tocsc()
+
+
+def public_edge_list_to_sparse_mat(edge_list):
+    """
+    Convert a pandas DF undirected edge list into a scipy csc sparse matrix. Assumes edges are contiguously indexed
+    starting at 0
+    :param edge_list: A pandas DF with shape (n_data, 2)
+    :return: A Columnar sparse matrix
+    """
+    # Create matrix representation (adjacency matrix) of edge list
+    size = edge_list.values[:].max() + 1
+    print 'building sparse matrix of size {0}'.format(size, size)
+    X = lil_matrix((size, size), dtype=int)
+    X[edge_list.ix[:, 0].values, edge_list.ix[:, 1].values] = 1
+    X[edge_list.ix[:, 1].values, edge_list.ix[:, 0].values] = 1
     return X.tocsc()
 
 
@@ -525,6 +542,11 @@ if __name__ == "__main__":
     # persist_data('resources/test/balanced7X.p', 'resources/test/balanced7y.p',
     #              X, y)
 
-    adj = read_pickle('resources/test/balanced7_100_thresh_X.p')
-    df = adj2edgelist(adj)
-    persist_edgelist(df, 'resources/test/balanced7_100_thresh.edgelist')
+    # adj = read_pickle('resources/test/balanced7_100_thresh_X.p')
+    # df = adj2edgelist(adj)
+    # persist_edgelist(df, 'resources/test/balanced7_100_thresh.edgelist')
+
+    edge_list = pd.read_csv('local_resources/zachary_karate/karate.edgelist', header=None)
+    x = public_edge_list_to_sparse_mat(edge_list)
+    y = pd.read_csv('local_resources/zachary_karate/y.csv')
+    persist_data('local_resources/zachary_karate/X.p', 'local_resources/zachary_karate/y.p', x, y)

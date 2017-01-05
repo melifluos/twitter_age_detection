@@ -29,10 +29,10 @@ n_data, n_features = x.shape
 vocab_size = n_data + n_features
 # define the noise distribution
 _, unigrams = np.unique(walks, return_counts=True)
-words_per_epoch = n_data * 770
+words_per_epoch = n_data * 1490
 skip_window = 10
-batch_size = 16
-num_steps = 1000000
+batch_size = 160
+num_steps = 10000
 
 #TODO run this on the karate club and debug it properly
 
@@ -213,6 +213,7 @@ with tf.Session(graph=graph) as session:
     average_loss = 0
     n_words = 0
     for step in xrange(num_steps):
+        s_batch = datetime.datetime.now()
         batch_inputs, batch_labels = batch_gen.next()
         lr = model.update_lr(n_words)
         feed_dict = {model.lr: lr, model.examples: batch_inputs, model.labels: batch_labels}
@@ -223,11 +224,13 @@ with tf.Session(graph=graph) as session:
             if step > 0:
                 average_loss /= 2000
             # The average loss is an estimate of the loss over the last 2000 batches.
-            print("Average loss at step ", step, ": ", average_loss, 'learning rate is', lr)
+            runtime = datetime.datetime.now() - s_batch
+            print("Average loss at step ", step, ": ", average_loss, 'learning rate is', lr, 'ran in', s_batch)
+            s_batch = datetime.datetime.now()
             average_loss = 0
     # final_embeddings = normalized_embeddings.eval()
 
-    np.savetxt('resources/test/tf_test5.csv', model.emb.eval())
+    np.savetxt('resources/test/tf_test6.csv', model.emb.eval())
     # saver.save(session, 'tf_out/test.ckpt')
     # ckpt = tf.train.get_checkpoint_state('tf_out')
     # saver.restore(session, ckpt.model_checkpoint_path)
