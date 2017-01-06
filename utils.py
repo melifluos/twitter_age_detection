@@ -542,11 +542,11 @@ if __name__ == "__main__":
     # persist_data('resources/test/balanced7X.p', 'resources/test/balanced7y.p',
     #              X, y)
 
-    # adj = read_pickle('resources/test/balanced7_100_thresh_X.p')
-    # df = adj2edgelist(adj)
-    # persist_edgelist(df, 'resources/test/balanced7_100_thresh.edgelist')
+    adj = read_pickle('resources/test/balanced7_10_thresh_X.p')
+    df = adj2edgelist(adj)
+    persist_edgelist(df, 'resources/test/balanced7_10_thresh.edgelist')
 
-    edge_list = pd.read_csv('local_resources/zachary_karate/karate.edgelist', header=None)
-    x = public_edge_list_to_sparse_mat(edge_list)
-    y = pd.read_csv('local_resources/zachary_karate/y.csv')
-    persist_data('local_resources/zachary_karate/X.p', 'local_resources/zachary_karate/y.p', x, y)
+    # edge_list = pd.read_csv('local_resources/zachary_karate/karate.edgelist', header=None)
+    # x = public_edge_list_to_sparse_mat(edge_list)
+    # y = pd.read_csv('local_resources/zachary_karate/y.csv')
+    # persist_data('local_resources/zachary_karate/X.p', 'local_resources/zachary_karate/y.p', x, y)

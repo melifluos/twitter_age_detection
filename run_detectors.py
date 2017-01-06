@@ -754,6 +754,37 @@ def tf_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
+def balanced7_10_thresh_scenario():
+    names = [['logistic'], ['l2 logistic'], ['deepwalk'], ['deepwalk_norm']]
+
+    x_path = 'resources/test/balanced7_10_thresh_X.p'
+
+    #tf_path = 'resources/test/tf_test5.csv'
+    y_path = 'resources/test/balanced7_10_thresh_y.p'
+
+    targets = utils.read_pickle(y_path)
+
+    n_folds = 10
+    x, y = utils.read_data(x_path, y_path, threshold=0)
+    x_norm = normalize(x, axis=0)
+
+    deep_x = utils.read_embedding('resources/test/balanced7_10_thresh.emd', targets)
+    deep_x_norm = normalize(deep_x, axis=0)
+
+    #tf_x = utils.read_tf_embedding(tf_path, targets)
+    results = run_all_datasets([x, x_norm, deep_x, deep_x_norm], y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results, tests = utils.stats_test(all_results)
+    tests[0].to_csv('results/age/balanced7_10_thresh_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv('results/age/balanced7_10_thresh_micro_pvalues' + utils.get_timestamp() + '.csv')
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/balanced7_10_thresh_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/balanced7_10_thresh_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
+
 def logistic_n_features_scenario():
     deepwalk_path = 'resources/test/balanced7.emd'
 
@@ -818,7 +849,7 @@ def karate_scenario():
 
 
 if __name__ == "__main__":
-    tf_scenario()
+    balanced7_10_thresh_scenario()
     # balanced7_pq_best_scenario()
     # size = 201
     # X, y = read_data(5, size)
