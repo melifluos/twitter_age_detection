@@ -303,5 +303,32 @@ def generate_balanced7_embedding(window_size):
     print datetime.now() - s, ' s'
 
 
+def generate_balanced7_10_thresh_embedding(window_size):
+    s = datetime.now()
+    walks_df = pd.read_csv('resources/test/balanced7_10_thresh_window_' + str(window_size) + 'walks.csv', header=None)
+    walks = walks_df.values
+    print 'embedding window length {}'.format(window_size)
+    g = BipartiteGraph()
+    g.learn_embeddings(walks, 128, 'resources/test/balanced7_10_thresh_window_' + str(window_size) + '.emd',
+                       window_size)
+    print datetime.now() - s, ' s'
+
+
+def scenario_build_balanced7_10_thresh_embeddings():
+    print 'reading data'
+    x, y = utils.read_data('resources/test/balanced7_10_thresh_X.p', 'resources/test/balanced7_10_thresh_y.p', 0)
+    s = datetime.now()
+    g = BipartiteGraph(x)
+    print 'building edges'
+    g.build_edge_array()
+    print 'generating walks'
+    walks = g.generate_walks(10, 80)
+    g.learn_embeddings(walks, 128, 'resources/test/balanced7_10_thresh.emd')
+    print datetime.now() - s, ' s'
+    print walks.shape
+    df = pd.DataFrame(walks)
+    df.to_csv('resources/test/balanced7_10_thresh_walks.csv', index=False, header=None)
+
+
 if __name__ == '__main__':
-    generate_balanced7_embedding(10)
+    scenario_build_balanced7_10_thresh_embeddings()

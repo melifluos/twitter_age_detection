@@ -29,7 +29,7 @@ n_data, n_features = x.shape
 vocab_size = n_data + n_features
 # define the noise distribution
 _, unigrams = np.unique(walks, return_counts=True)
-words_per_epoch = n_data * 1490
+words_per_epoch = n_data * 10 * 1490
 skip_window = 10
 batch_size = 160
 num_steps = 10000
