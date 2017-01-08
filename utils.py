@@ -53,7 +53,6 @@ def get_metrics(y, pred, verbose=True):
     :param pred:
     :return:
     """
-
     macro_f1 = f1_score(y, pred, average='macro')
     print
     print 'micro'
@@ -69,7 +68,6 @@ def get_metrics(y, pred, verbose=True):
         scores[0, :] = all_scores
         print pd.DataFrame(data=scores, index=None, columns=np.arange(len(all_scores)))
     return macro_f1, micro_f1
-    # return sum(y == pred) / float(len(y))
 
 
 def run_cv_pred(X, y, n_folds, model, *args, **kwargs):

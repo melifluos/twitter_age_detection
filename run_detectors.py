@@ -19,6 +19,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.model_selection import train_test_split
 
 __author__ = 'benchamberlain'
 
@@ -108,6 +109,22 @@ def run_detectors(X, y, names, classifiers, n_folds):
     return results
 
 
+def run_experiments(X, y, names, classifiers, n_reps, train_pct):
+    """
+    Runs a detector on the age data and returns accuracy
+    :param X: A scipy sparse feature matrix
+    :param y: The target labels corresponding to rows of X
+    :return: The accuracy of the detector
+    """
+    temp = pd.DataFrame(np.zeros(shape=(len(names), n_reps)))
+    temp.index = names
+    results = (temp, temp.copy())
+    for name, detector in zip(names, classifiers):
+        results = vary_train_pct(X, y, detector, n_reps, name, results, train_pct)
+        print name
+    return results
+
+
 def run_cv_pred(X, y, clf, n_folds, name, results):
     """
     Run n-fold cross validation returning a prediction for every row of X
@@ -140,6 +157,31 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     return y_pred, results
 
 
+def vary_train_pct(X, y, clf, nreps, name, results, train_pct):
+    """
+    Calculate results for this clf at various train / test split percentages
+    :param X: features
+    :param y: targets
+    :param clf: detector
+    :param nreps: number of random repetitions
+    :param name: name of the detector
+    :param results: A tuple of Pandas DataFrames containing (macro, micro) F1 results
+    :param train_pct: The percentage of the data used for training
+    :return: A tuple of Pandas DataFrames containing (macro, micro) F1 results
+    """
+    for rep in range(nreps):
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_pct, random_state=42)
+        clf.fit(X_train, y_train)
+        try:  # Gradient boosted trees do not accept sparse matrices in the predict function currently
+            preds = clf.predict(X_test)
+        except TypeError:
+            preds = clf.predict(X_test.todense())
+        macro, micro = utils.get_metrics(preds, y_test)
+        results[0].loc[name, rep] = macro
+        results[1].loc[name, rep] = micro
+    return results
+
+
 def run_all_datasets(datasets, y, names, classifiers, n_folds):
     """
     Loop through a list of datasets running potentially numerous classifiers on each
@@ -155,6 +197,27 @@ def run_all_datasets(datasets, y, names, classifiers, n_folds):
         temp = run_detectors(data[0], y, data[1], classifiers, n_folds)
         results.append(temp)
     return results
+
+
+def run_all_train_pct(datasets, y, names, classifiers, n_reps):
+    """
+    :param datasets:
+    :param y:
+    :param names:
+    :param classifiers:
+    :param n_folds:
+    :return:
+    """
+    all_results = {}
+    for train_size in xrange(1, 10, 1):
+        train_pct = train_size / 10.0
+        print 'training percentage =' + str(train_pct)
+        results = []
+        for data in zip(datasets, names):
+            temp = run_experiments(data[0], y, data[1], classifiers, n_reps, train_pct)
+            results.append(temp)
+        all_results[train_pct] = results
+    return all_results
 
 
 def read_roberto_embeddings(paths, target_path, sizes):
@@ -759,7 +822,7 @@ def balanced7_10_thresh_scenario():
 
     x_path = 'resources/test/balanced7_10_thresh_X.p'
 
-    #tf_path = 'resources/test/tf_test5.csv'
+    # tf_path = 'resources/test/tf_test5.csv'
     y_path = 'resources/test/balanced7_10_thresh_y.p'
 
     targets = utils.read_pickle(y_path)
@@ -771,7 +834,7 @@ def balanced7_10_thresh_scenario():
     deep_x = utils.read_embedding('resources/test/balanced7_10_thresh.emd', targets)
     deep_x_norm = normalize(deep_x, axis=0)
 
-    #tf_x = utils.read_tf_embedding(tf_path, targets)
+    # tf_x = utils.read_tf_embedding(tf_path, targets)
     results = run_all_datasets([x, x_norm, deep_x, deep_x_norm], y, names, classifiers, n_folds)
     all_results = utils.merge_results(results)
     results, tests = utils.stats_test(all_results)
@@ -848,8 +911,44 @@ def karate_scenario():
     results[1].to_csv(micro_path, index=True)
 
 
+def generate_graphs_scenario():
+    deepwalk_path = 'resources/test/balanced7_10_thresh.emd'
+    y_path = 'resources/test/balanced7_10_thresh_y.p'
+    x_path = 'resources/test/balanced7_10_thresh_X.p'
+
+    target = utils.read_target(y_path)
+
+    x, y = utils.read_data(x_path, y_path, threshold=0)
+
+    names = [['logistic'], ['deepwalk']]
+
+    x_deepwalk = utils.read_embedding(deepwalk_path, target)
+    X = [x_deepwalk, normalize(x, axis=0)]
+    n_reps = 2
+    results_dic = run_all_train_pct(X, y, names, classifiers, n_reps)
+    avg_macro_results = pd.DataFrame(data=None, index=names)
+    avg_micro_results = pd.DataFrame(data=None, index=names)
+    for key, results in results_dic.iteritems():
+        all_results = utils.merge_results(results)
+        results, tests = utils.stats_test(all_results)
+        tests[0].to_csv('results/age/graphs/macro_train_pct_' + str(key) + '_pvalues' + utils.get_timestamp() + '.csv')
+        tests[1].to_csv('results/age/graphs/micro_train_pct_' + str(key) + '_pvalues' + utils.get_timestamp() + '.csv')
+        print 'macro', results[0]
+        print 'micro', results[1]
+        macro_path = 'results/age/graphs/macro_train_pct_' + str(key) + utils.get_timestamp() + '.csv'
+        micro_path = 'results/age/graphs/micro_train_pct_' + str(key) + utils.get_timestamp() + '.csv'
+        results[0].to_csv(macro_path, index=True)
+        results[1].to_csv(micro_path, index=True)
+        average_macro_results[key] = results[0]['mean']
+        average_micro_results[key] = results[1]['mean']
+    avg_macro_path = 'results/age/graphs/avg_macro' + str(key) + utils.get_timestamp() + '.csv'
+    avg_micro_path = 'results/age/graphs/avg_micro' + str(key) + utils.get_timestamp() + '.csv'
+    avg_macro_results.to_csv(avg_macro_path, index=True)
+    avg_micro_results.to_csv(avg_micro_path, index=True)
+
+
 if __name__ == "__main__":
-    balanced7_10_thresh_scenario()
+    generate_graphs_scenario()
     # balanced7_pq_best_scenario()
     # size = 201
     # X, y = read_data(5, size)

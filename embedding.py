@@ -6,7 +6,6 @@ TODO: adapt this to work for bipartite graphs
 from gensim.models import Word2Vec
 import networkx as nx
 import node2vec
-import age_detector
 import utils
 import gensim
 import csv
@@ -134,7 +133,7 @@ def scenario_pq_grid():
     :return:
     """
     print 'creating networkx graph object'
-    inpath = 'resources/test/balanced7_100_thresh.edgelist'
+    inpath = 'resources/test/balanced7_10_thresh.edgelist'
     # SOMETHING IS HAPPENING HERE SO THAT THE DEGREE OF MY MATRIX AND THE DEGREE OF THIS GRAPH ARE DIFFERENT
     nx_G = nx.read_edgelist(inpath, nodetype=int, create_using=nx.DiGraph())
     for edge in nx_G.edges():
@@ -199,7 +198,7 @@ def karate_scenario():
 
 if __name__ == '__main__':
     s = datetime.datetime.now()
-    karate_scenario()
+    scenario_pq_grid()
     # import pandas as pd
     # walks = pd.read_csv('local_resources/blogcatalog/p025_q025_d128_walks.csv', header=None, index_col=0, skiprows=1)
     # print walks.head()
