@@ -920,15 +920,15 @@ def generate_graphs_scenario():
 
     x, y = utils.read_data(x_path, y_path, threshold=0)
 
-    names = [['logistic'], ['deepwalk']]
+    names = np.array([['logistic'], ['deepwalk']])
 
     x_deepwalk = utils.read_embedding(deepwalk_path, target)
     X = [x_deepwalk, normalize(x, axis=0)]
-    n_reps = 2
+    n_reps = 3
     results_dic = run_all_train_pct(X, y, names, classifiers, n_reps)
-    avg_macro_results = pd.DataFrame(data=None, index=names)
-    avg_micro_results = pd.DataFrame(data=None, index=names)
-    for key, results in results_dic.iteritems():
+    avg_macro_results = pd.DataFrame(data=None, index=names.squeeze())
+    avg_micro_results = pd.DataFrame(data=None, index=names.squeeze())
+    for key, results in sorted(results_dic.iteritems()):
         all_results = utils.merge_results(results)
         results, tests = utils.stats_test(all_results)
         tests[0].to_csv('results/age/graphs/macro_train_pct_' + str(key) + '_pvalues' + utils.get_timestamp() + '.csv')
@@ -939,8 +939,8 @@ def generate_graphs_scenario():
         micro_path = 'results/age/graphs/micro_train_pct_' + str(key) + utils.get_timestamp() + '.csv'
         results[0].to_csv(macro_path, index=True)
         results[1].to_csv(micro_path, index=True)
-        average_macro_results[key] = results[0]['mean']
-        average_micro_results[key] = results[1]['mean']
+        avg_macro_results[key] = results[0]['mean']
+        avg_micro_results[key] = results[1]['mean']
     avg_macro_path = 'results/age/graphs/avg_macro' + str(key) + utils.get_timestamp() + '.csv'
     avg_micro_path = 'results/age/graphs/avg_micro' + str(key) + utils.get_timestamp() + '.csv'
     avg_macro_results.to_csv(avg_macro_path, index=True)
