@@ -20,28 +20,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 
-# Read the data
-walks = pd.read_csv('resources/test/node2vec/walks_1.0_1.0.csv', header=None).values
-x_path = 'resources/test/balanced7_100_thresh_X.p'
-y_path = 'resources/test/balanced7_100_thresh_y.p'
-x, y = utils.read_data(x_path, y_path, threshold=1)
-n_data, n_features = x.shape
-vocab_size = n_data + n_features
-# define the noise distribution
-_, unigrams = np.unique(walks, return_counts=True)
-words_per_epoch = n_data * 10 * 1490
-skip_window = 10
-batch_size = 160
-num_steps = 10000
-
-#TODO run this on the karate club and debug it properly
-
-karate_path = 'local_resources/zachary_karate/walks1_len10_p1_q1.csv'
 
 # construct input-output pairs
+class Params():
+    def __init__(self):
+        self.batch_size = 160
+        self.embedding_size = 128
+        self.neg_samples = 5
+        self.skip_window = 10
+        self.num_steps = 10000
+
 
 class Graph2Vecs():
-    def __init__(self, vocab_size, words_per_epoch, batch_size, unigrams):
+    def __init__(self, vocab_size, batch_size, unigrams):
         # Set the parameters
         self.vocab_size = vocab_size
         self.batch_size = batch_size
@@ -52,7 +43,7 @@ class Graph2Vecs():
         self.initial_learning_rate = 0.2
         self.global_step = tf.Variable(0, name="global_step")
         self.n_words = 0
-        self.words_to_train = float(words_per_epoch * self.epochs_to_train)
+        # self.words_to_train = float(words_per_epoch * self.epochs_to_train)
         self.examples = tf.placeholder(tf.int32, shape=[self.batch_size], name='examples')
         self.labels = tf.placeholder(tf.int32, shape=[self.batch_size, 1], name='labels')
         self.lr = tf.placeholder(tf.float32, shape=(), name='learning_rate')
@@ -195,44 +186,84 @@ def generate_batch(skip_window, data, batch_size):
         row_index = (row_index + 1) % data.shape[0]
 
 
-# initialise the graph
-graph = tf.Graph()
-# run the tensorflow session
-with tf.Session(graph=graph) as session:
-    # Define the training data
-    model = Graph2Vecs(vocab_size, words_per_epoch, batch_size, unigrams)
+def main(outpath, walks, unigrams, vocab_size, params):
+    # initialise the graph
+    graph = tf.Graph()
+    # run the tensorflow session
+    with tf.Session(graph=graph) as session:
+        # Define the training data
+        model = Graph2Vecs(vocab_size, params.batch_size, unigrams)
 
-    # initialize all variables in parallel
-    tf.global_variables_initializer().run()
-    _ = [print(v) for v in tf.global_variables()]
+        # initialize all variables in parallel
+        tf.global_variables_initializer().run()
+        _ = [print(v) for v in tf.global_variables()]
 
-    s = datetime.datetime.now()
-    print("Initialized")
-    # define batch generator
-    batch_gen = generate_batch(skip_window, walks, batch_size)
-    average_loss = 0
-    n_words = 0
-    for step in xrange(num_steps):
-        s_batch = datetime.datetime.now()
-        batch_inputs, batch_labels = batch_gen.next()
-        lr = model.update_lr(n_words)
-        feed_dict = {model.lr: lr, model.examples: batch_inputs, model.labels: batch_labels}
-        _, loss_val = session.run([model.train, model.loss], feed_dict=feed_dict)
-        average_loss += loss_val
-        n_words += len(batch_inputs)
-        if step % 2000 == 0:
-            if step > 0:
-                average_loss /= 2000
-            # The average loss is an estimate of the loss over the last 2000 batches.
-            runtime = datetime.datetime.now() - s_batch
-            print("Average loss at step ", step, ": ", average_loss, 'learning rate is', lr, 'ran in', s_batch)
+        s = datetime.datetime.now()
+        print("Initialized")
+        # define batch generator
+        batch_gen = generate_batch(params.skip_window, walks, params.batch_size)
+        average_loss = 0
+        n_words = 0
+        for step in xrange(params.num_steps):
             s_batch = datetime.datetime.now()
-            average_loss = 0
-    # final_embeddings = normalized_embeddings.eval()
+            batch_inputs, batch_labels = batch_gen.next()
+            lr = model.update_lr(n_words)
+            feed_dict = {model.lr: lr, model.examples: batch_inputs, model.labels: batch_labels}
+            _, loss_val = session.run([model.train, model.loss], feed_dict=feed_dict)
+            average_loss += loss_val
+            n_words += len(batch_inputs)
+            if step % 2000 == 0:
+                if step > 0:
+                    average_loss /= 2000
+                # The average loss is an estimate of the loss over the last 2000 batches.
+                runtime = datetime.datetime.now() - s_batch
+                print("Average loss at step ", step, ": ", average_loss, 'learning rate is', lr, 'ran in', s_batch)
+                s_batch = datetime.datetime.now()
+                average_loss = 0
+        # final_embeddings = normalized_embeddings.eval()
 
-    np.savetxt('resources/test/tf_test6.csv', model.emb.eval())
-    # saver.save(session, 'tf_out/test.ckpt')
-    # ckpt = tf.train.get_checkpoint_state('tf_out')
-    # saver.restore(session, ckpt.model_checkpoint_path)
-    # np.savetxt('resources/test/tf_test2.csv', emb.eval())
-    print('ran in {0} s'.format(datetime.datetime.now() - s))
+        np.savetxt(outpath, model.emb.eval())
+        # saver.save(session, 'tf_out/test.ckpt')
+        # ckpt = tf.train.get_checkpoint_state('tf_out')
+        # saver.restore(session, ckpt.model_checkpoint_path)
+        # np.savetxt('resources/test/tf_test2.csv', emb.eval())
+        print('ran in {0} s'.format(datetime.datetime.now() - s))
+
+
+def get_vocab_size(adj_path, bipartite):
+    """
+    Get the number of vertices in the graph (equivalent to the NLP vocab size)
+    :param adj_path: the path to the sparse CSR adjacency matrix
+    :param bipartite: True if the graph is bipartite
+    :return: an integer vocab_size
+    """
+    adj = utils.read_pickle(adj_path)
+    vocab_size = adj.shape[0]
+    if bipartite:
+        vocab_size += adj.shape[1]
+    return vocab_size
+
+
+def twitter_age_scenario():
+    # Read the data
+    walks = pd.read_csv('resources/test/node2vec/walks_1.0_1.0.csv', header=None).values
+    x_path = 'resources/test/balanced7_100_thresh_X.p'
+    vocab_size = get_vocab_size(x_path)
+    # define the noise distribution
+    _, unigrams = np.unique(walks, return_counts=True)
+    params = Params()
+    main('resources/test/tf.emd', walks, unigrams, vocab_size, params)
+
+
+def karate_scenario():
+    walks = pd.read_csv('local_resources/zachary_karate/walks1_len10_p1_q1.csv', header=None).values
+    x_path = 'local_resources/zachary_karate/X.p'
+    vocab_size = get_vocab_size(x_path)
+    # define the noise distribution
+    _, unigrams = np.unique(walks, return_counts=True)
+    params = Params()
+    main('local_resources/zachary_karate/tf.emd', walks, unigrams, vocab_size, params)
+
+
+if __name__ == '__main__':
+    karate_scenario()

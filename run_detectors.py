@@ -948,7 +948,7 @@ def generate_graphs_scenario():
 
 
 if __name__ == "__main__":
-    generate_graphs_scenario()
+    # generate_graphs_scenario()
     # balanced7_pq_best_scenario()
     # size = 201
     # X, y = read_data(5, size)
