@@ -20,6 +20,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.model_selection import train_test_split
+from age_detector import AgeDetector
 
 __author__ = 'benchamberlain'
 
@@ -947,7 +948,25 @@ def generate_graphs_scenario():
     avg_micro_results.to_csv(avg_micro_path, index=True)
 
 
+def bayesian_age_detector_scenario():
+    y_path = 'resources/test/balanced7_10_thresh_y.p'
+    x_path = 'resources/test/balanced7_10_thresh_X.p'
+    x, y = utils.read_data(x_path, y_path, threshold=0)
+    names = np.array([['age']])
+    n_folds = 2
+    classifiers = [AgeDetector()]
+    results = run_all_datasets([x], y, names, classifiers, n_folds)
+    all_results = utils.merge_results(results)
+    results, tests = utils.stats_test(all_results)
+    print 'macro', results[0]
+    print 'micro', results[1]
+    macro_path = 'results/age/bayesian_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/age/bayesian_micro' + utils.get_timestamp() + '.csv'
+    results[0].to_csv(macro_path, index=True)
+    results[1].to_csv(micro_path, index=True)
+
 if __name__ == "__main__":
+    bayesian_age_detector_scenario()
     # generate_graphs_scenario()
     # balanced7_pq_best_scenario()
     # size = 201
