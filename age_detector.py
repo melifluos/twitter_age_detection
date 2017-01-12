@@ -76,14 +76,18 @@ class AgeDetector:
         :param X: the input values
         :return:
         """
-        _, n_cats = self.model.shape
+
+        n_cats, _ = self.model.shape
         # create an array for storing the joint log probabilities
-        joint = np.zeros(shape=X.shape)
+        joint = np.zeros(shape=(X.shape[0], n_cats))
+        print 'model', self.model.shape
+        print 'data', X.shape
+        print 'joint', joint.shape
         # This is the fastest way of iterating through nonzero elements of a sparse matrix
         # http://stackoverflow.com/questions/4319014/iterating-through-a-scipy-sparse-vector-or-matrix
         coo_mat = X.tocoo()
         for row, col in itertools.izip(coo_mat.row, coo_mat.col):
-            joint[row, :] += self.model[col, :]
+            joint[row, :] += self.model[:, col]
 
         joint += np.log(self.PRIOR)
         # need to unormalise before unlogging to prevent underflow
@@ -96,9 +100,8 @@ class AgeDetector:
 
         probs = np.divide(probs, normaliser)
 
-        max_prob = np.max(probs, axis=1)
-        predicted_cat = probs.argmax(axis=1)
-        predicted_cat[max_prob < self.threshold] = -1
+        predicted_cat = probs.argmax(axis=1) + 1
+        np.savetxt('age_preds.csv', predicted_cat, delimiter=',')
 
         return predicted_cat
 
