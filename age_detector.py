@@ -138,14 +138,6 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     return y_pred, results
 
 
-# read in the data
-
-# train the model
-
-# generate data dependent prior
-
-# test on held out data
-
 if __name__ == '__main__':
     y_path = 'resources/test/balanced7_10_thresh_y.p'
     x_path = 'resources/test/balanced7_10_thresh_X.p'

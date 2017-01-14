@@ -121,8 +121,8 @@ def run_experiments(X, y, names, classifiers, n_reps, train_pct):
     temp.index = names
     results = (temp, temp.copy())
     for name, detector in zip(names, classifiers):
-        results = vary_train_pct(X, y, detector, n_reps, name, results, train_pct)
-        print name
+        print 'running ' + str(name) + ' dataset'
+        results = evaluate_test_sample(X, y, detector, n_reps, name, results, train_pct)
     return results
 
 
@@ -158,7 +158,7 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     return y_pred, results
 
 
-def vary_train_pct(X, y, clf, nreps, name, results, train_pct):
+def evaluate_test_sample(X, y, clf, nreps, name, results, train_pct):
     """
     Calculate results for this clf at various train / test split percentages
     :param X: features
@@ -170,8 +170,11 @@ def vary_train_pct(X, y, clf, nreps, name, results, train_pct):
     :param train_pct: The percentage of the data used for training
     :return: A tuple of Pandas DataFrames containing (macro, micro) F1 results
     """
+    seed = 0
     for rep in range(nreps):
-        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_pct, random_state=42)
+        # setting a random seed will cause the same sample to be generated each time
+        X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=train_pct, random_state=seed, stratify=y)
+        seed += 1
         clf.fit(X_train, y_train)
         try:  # Gradient boosted trees do not accept sparse matrices in the predict function currently
             preds = clf.predict(X_test)
@@ -966,7 +969,7 @@ def bayesian_age_detector_scenario():
     results[1].to_csv(micro_path, index=True)
 
 if __name__ == "__main__":
-    bayesian_age_detector_scenario()
+    karate_scenario()
     # generate_graphs_scenario()
     # balanced7_pq_best_scenario()
     # size = 201

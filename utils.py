@@ -46,7 +46,7 @@ class MLdataset(object):
         self.test = test
 
 
-def get_metrics(y, pred, verbose=True):
+def get_metrics(y, pred, verbose=False):
     """
     generate metrics to assess the detectors
     :param y:
@@ -54,10 +54,7 @@ def get_metrics(y, pred, verbose=True):
     :return:
     """
     macro_f1 = f1_score(y, pred, average='macro')
-    print
-    print 'micro'
     micro_f1 = f1_score(y, pred, average='micro')
-    print 'all'
     all_scores = f1_score(y, pred, average=None)
     if verbose:
         print 'macro'
