@@ -477,10 +477,43 @@ def t_grid(results):
     return tests
 
 
+def reshape_res(results):
+    macro = []
+    micro = []
+    for elem in results:
+        macro.append(elem[0])
+        micro.append(elem[1])
+    return macro, micro
+
+
+def array_t_grid(results, names):
+    """
+    create an all against all grid of significance tests
+    :param results:
+    :return:
+    """
+
+    nrows = len(results)
+    macro_micro = reshape_res(results)
+    tests = []
+    for elem in macro_micro:
+        grid = (np.zeros((nrows, nrows)), np.zeros((nrows, nrows)))
+        for row in xrange(nrows):
+            for col in xrange(row + 1, nrows):
+                test = stats.ttest_ind(a=elem[row].values,
+                                       b=elem[col].values, axis=None, equal_var=False)
+                grid[row, col] = test.pvalue
+
+        test = pd.DataFrame(index=names, data=grid, columns=names)
+        print test
+        test.append(test)
+    return tests
+
+
 def stats_test(results_tuple):
     """
     performs a 2 sided t-test to see if difference in models is significant
-    :param results:
+    :param results_tuples: An array of pandas DataFrames (macro,micro)
     :return:
     """
     output = []
@@ -518,6 +551,62 @@ def stats_test(results_tuple):
         tests.append(t_grid(results))
 
     return output, tests
+
+
+def get_names(results_array):
+    names = []
+    for elem in results_array:
+        name = elem[0].index.values[0]
+        names.append(name)
+    return names
+
+
+def array_stats_test(results_array):
+    """
+    performs a 2 sided t-test to see if difference in models is significant. For each condition to be tested the results
+    are in a 2d array
+    :param results_array: A list of tuples of pandas DataFrames [(macro, micro), (..,..), ...]
+    :return:
+    """
+    output = []
+    tests = []
+    means = []
+    names = get_names(results_array)
+    output = pd.DataFrame(data=np.zeros(shape=(len(results_array), 2)), index=names,
+                          columns=['mean_macro', 'mean_micro'])
+    for idx, results in enumerate(results_array):
+        output.ix[idx, 0] = results[0].values[:].mean()
+        output.ix[idx, 1] = results[1].values[:].mean()
+        #
+        # try:
+        #     print '1 versus 2'
+        #     print(stats.ttest_ind(a=results.ix[0, 0:-1],
+        #                           b=results.ix[1, 0:-1],
+        #                           equal_var=False))
+        # except IndexError:
+        #     pass
+        #
+        # try:
+        #     print '2 versus 3'
+        #     print(stats.ttest_ind(a=results.ix[1, 0:-1],
+        #                           b=results.ix[2, 0:-1],
+        #                           equal_var=False))
+        # except IndexError:
+        #     pass
+        #
+        # try:
+        #     print '3 versus 4'
+        #     print(stats.ttest_ind(a=results.ix[1, 0:-1],
+        #                           b=results.ix[2, 0:-1],
+        #                           equal_var=False))
+        # except IndexError:
+        #     pass
+        #
+        # output.append(results)
+        #
+        # tests.append(t_grid(results))
+
+    return output, 1
 
 
 def merge_results(results_list):

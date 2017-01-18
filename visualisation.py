@@ -8,6 +8,7 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 def tsne_plot():
     model = TSNE(n_components=2, random_state=0)
 
@@ -21,7 +22,7 @@ def tsne_plot():
     X1 = utils.read_embedding(emd_path, target, 64)
     embedding = model.fit_transform(X1)
 
-    #sb.set_context("notebook", font_scale=1.1)
+    # sb.set_context("notebook", font_scale=1.1)
     sb.set_style("ticks")
 
     print X1.shape
@@ -30,11 +31,11 @@ def tsne_plot():
     df['label'] = y
 
     sns.lmplot('x', 'y',
-              data=df,
-              fit_reg=False,
-              hue="label",
-              scatter_kws={"marker": "D",
-                           "s": 100})
+               data=df,
+               fit_reg=False,
+               hue="label",
+               scatter_kws={"marker": "D",
+                            "s": 100})
 
 
 def f1_line_plots(paths):
@@ -54,6 +55,20 @@ def f1_line_plots(paths):
     axarr[1].set_xlabel('% of labelled data')
     f.savefig('results/age/graphs/f1_line_plots' + utils.get_timestamp() + '.pdf')
 
+
+def plot_embedding(embedding, labels, path):
+    colours = labels
+    plt.scatter(embedding[:, 0], embedding[:, 1], c=colours, alpha=0.5)
+    vert_labs = xrange(1, len(labels) + 1)
+    for vert_lab, x, y in zip(vert_labs, embedding[:, 0], embedding[:, 1]):
+        plt.annotate(
+            vert_lab,
+            xy=(x, y), xytext=(-2, 2),
+            textcoords='offset points', ha='right', va='bottom', fontsize=8) \
+            # bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
+        # arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0'))
+    plt.savefig(path)
+    plt.clf()
 
 
 if __name__ == '__main__':
