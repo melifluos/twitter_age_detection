@@ -492,12 +492,11 @@ def array_t_grid(results, names):
     :param results:
     :return:
     """
-
     nrows = len(results)
     macro_micro = reshape_res(results)
     tests = []
     for elem in macro_micro:
-        grid = (np.zeros((nrows, nrows)), np.zeros((nrows, nrows)))
+        grid = np.zeros((nrows, nrows))
         for row in xrange(nrows):
             for col in xrange(row + 1, nrows):
                 test = stats.ttest_ind(a=elem[row].values,
@@ -506,7 +505,7 @@ def array_t_grid(results, names):
 
         test = pd.DataFrame(index=names, data=grid, columns=names)
         print test
-        test.append(test)
+        tests.append(test)
     return tests
 
 
@@ -568,45 +567,14 @@ def array_stats_test(results_array):
     :param results_array: A list of tuples of pandas DataFrames [(macro, micro), (..,..), ...]
     :return:
     """
-    output = []
-    tests = []
-    means = []
     names = get_names(results_array)
     output = pd.DataFrame(data=np.zeros(shape=(len(results_array), 2)), index=names,
                           columns=['mean_macro', 'mean_micro'])
+    tests = array_t_grid(results_array, names)
     for idx, results in enumerate(results_array):
         output.ix[idx, 0] = results[0].values[:].mean()
         output.ix[idx, 1] = results[1].values[:].mean()
-        #
-        # try:
-        #     print '1 versus 2'
-        #     print(stats.ttest_ind(a=results.ix[0, 0:-1],
-        #                           b=results.ix[1, 0:-1],
-        #                           equal_var=False))
-        # except IndexError:
-        #     pass
-        #
-        # try:
-        #     print '2 versus 3'
-        #     print(stats.ttest_ind(a=results.ix[1, 0:-1],
-        #                           b=results.ix[2, 0:-1],
-        #                           equal_var=False))
-        # except IndexError:
-        #     pass
-        #
-        # try:
-        #     print '3 versus 4'
-        #     print(stats.ttest_ind(a=results.ix[1, 0:-1],
-        #                           b=results.ix[2, 0:-1],
-        #                           equal_var=False))
-        # except IndexError:
-        #     pass
-        #
-        # output.append(results)
-        #
-        # tests.append(t_grid(results))
-
-    return output, 1
+    return output, tests
 
 
 def merge_results(results_list):

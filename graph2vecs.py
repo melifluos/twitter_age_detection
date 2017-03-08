@@ -108,7 +108,7 @@ class Graph2Vecs():
             true_classes=labels_matrix,
             num_true=1,
             num_sampled=self.num_samples,
-            unique=True,
+            unique=True,  # set to True if all the samples need to be unique
             range_max=self.vocab_size,
             distortion=0.75,
             unigrams=self.unigrams.tolist()))
@@ -168,8 +168,10 @@ class Graph2Vecs():
         #     self.loss = loss
         #     self.train = self.optimize(loss)
 
+def initialize_embedding():
 
 # produce batch of data
+
 def generate_batch(skip_window, data, batch_size):
     """
     A generator that produces the next batch of examples and labels
@@ -430,34 +432,36 @@ def run_embedding_array(embeddings, names, n_reps, train_size):
 
 
 def compare_embeddings():
-    emd_reps = 2  # number of times to generate the embeddings
-    det_reps = 2  # number of times to repeat the classification
+    emd_reps = 10  # number of times to generate the embeddings
+    det_reps = 10  # number of times to repeat the classification
     train_size = 4  # number of training examples
     size = 2  # the number of dimensions to embed
     walks = pd.read_csv('local_resources/zachary_karate/walks1_len10_p1_q1.csv', header=None).values
     p1 = Params(batch_size=4, embedding_size=size, neg_samples=5, skip_window=3, num_pairs=1500,
                 logging_interval=100,
                 initial_learning_rate=0.2)
-    p2 = Params(batch_size=4, embedding_size=size, neg_samples=33, skip_window=3, num_pairs=1500,
+    p2 = Params(batch_size=4, embedding_size=size, neg_samples=8, skip_window=3, num_pairs=1500,
                 logging_interval=100,
                 initial_learning_rate=0.2)
     param_arr = [p1, p2]
     elems, unigrams = np.unique(walks, return_counts=True)
-    names = ['neg5', 'neg33']
+    names = ['neg5', 'neg8']
     results = []
     for name, params in zip(names, param_arr):
         result = generate_embeddings(name, emd_reps, det_reps, params, walks, unigrams, train_size)
         results.append(result)
 
-    results, tests = utils.array_stats_test(results)
-    # tests[0].to_csv('results/karate/tf_macro_pvalues' + utils.get_timestamp() + '.csv')
-    # tests[1].to_csv('results/karate/tf_micro_pvalues' + utils.get_timestamp() + '.csv')
-    print('results', results)
-    # macro_path = 'results/karate/tf_macro' + utils.get_timestamp() + '.csv'
-    # micro_path = 'results/karate/tf_micro' + utils.get_timestamp() + '.csv'
-    # results[0].to_csv(macro_path, index=True)
-    # results[1].to_csv(micro_path, index=True)
-    # return results
+    means, tests = utils.array_stats_test(results)
+    tests[0].to_csv('results/karate/tf_macro_pvalues' + utils.get_timestamp() + '.csv')
+    tests[1].to_csv('results/karate/tf_micro_pvalues' + utils.get_timestamp() + '.csv')
+    print('results', means)
+    means_path = 'results/karate/tf_means' + utils.get_timestamp() + '.csv'
+    means.to_csv(means_path, index=True)
+    all_results = utils.merge_results(results)
+    macro_path = 'results/karate/tf_macro' + utils.get_timestamp() + '.csv'
+    micro_path = 'results/karate/tf_micro' + utils.get_timestamp() + '.csv'
+    all_results[0].to_csv(macro_path, index=True)
+    all_results[1].to_csv(micro_path, index=True)
 
 
 if __name__ == '__main__':

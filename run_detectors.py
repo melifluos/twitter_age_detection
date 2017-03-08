@@ -136,7 +136,7 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     :return:
     """
     # Construct a kfolds object
-    skf = StratifiedKFold(n_splits=n_folds)
+    skf = StratifiedKFold(n_splits=n_folds, shuffle=True)
     splits = skf.split(X, y)
     y_pred = y.copy()
 
@@ -150,7 +150,7 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
             preds = clf.predict(X_test)
         except TypeError:
             preds = clf.predict(X_test.todense())
-        macro, micro = utils.get_metrics(preds, y[test_index])
+        macro, micro = utils.get_metrics(y[test_index], preds)
         results[0].loc[name, idx] = macro
         results[1].loc[name, idx] = micro
         y_pred[test_index] = preds
@@ -180,7 +180,7 @@ def evaluate_test_sample(X, y, clf, nreps, name, results, train_pct):
             preds = clf.predict(X_test)
         except TypeError:
             preds = clf.predict(X_test.todense())
-        macro, micro = utils.get_metrics(preds, y_test)
+        macro, micro = utils.get_metrics(y_test, preds)
         results[0].loc[name, rep] = macro
         results[1].loc[name, rep] = micro
     return results
