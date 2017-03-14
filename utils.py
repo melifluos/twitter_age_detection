@@ -439,6 +439,54 @@ def read_data(x_path, y_path, threshold):
     return X1, y
 
 
+def assess_sparsity(X):
+    """
+    Assess the number of features that disappear if we put a threshold
+    on rare features
+    :param X:
+    :return:
+    """
+    for thresh in xrange(1, 11):
+        print 'threshold ', thresh
+        X1, cols = remove_sparse_features(X, threshold=thresh)
+        sums = X1.sum(axis=1)
+        lost_rows = sums == 0
+        print sum(lost_rows), ' rows lost'
+
+
+def generate_denser_data(in_xpath, in_ypath, out_xpath, out_ypath, thresh):
+    """
+    Remove any empty rows that are produced as a result of removing sparse features
+    :param in_xpath:
+    :param in_ypath:
+    :param out_xpath:
+    :param out_ypath:
+    :param thresh:
+    :return:
+    """
+    X = read_pickle(in_xpath)
+    y = read_pickle(in_ypath)
+    X, cols = remove_sparse_features(X, threshold=thresh)
+
+    print 'input matrix of shape: {0}'.format(X.shape)
+    observations = np.array(X.sum(axis=1).flatten())[0]
+    good_rows = np.where(observations > 0)[0]
+
+    # sums = X.sum(axis=1)
+    # lost_rows = sums == 0
+    # lost_rows = np.array(lost_rows.flatten())
+    X_new = X[good_rows, :]
+    y_new = y[good_rows, :]
+    try:
+        y_new = y[good_rows, :]
+    except TypeError:  # got a DataFrame
+        y_new = y.iloc[good_rows, :].copy()
+        y_new['fan_idx'] = np.arange(len(good_rows))
+    print 'output matrix of shape: {0}'.format(X_new.shape)
+
+    persist_data(out_xpath, out_ypath, X_new, y_new)
+
+
 def get_timestamp():
     """
     get a string timestamp to put on files
@@ -594,9 +642,17 @@ if __name__ == "__main__":
     # persist_data('resources/test/balanced7X.p', 'resources/test/balanced7y.p',
     #              X, y)
 
-    adj = read_pickle('resources/test/balanced7_10_thresh_X.p')
-    df = adj2edgelist(adj)
-    persist_edgelist(df, 'resources/test/balanced7_10_thresh.edgelist')
+    in_xpath = 'local_resources/Socio_economic_classification_data/income_dataset/X.p'
+    in_ypath = 'local_resources/Socio_economic_classification_data/income_dataset/y.p'
+    out_xpath = 'local_resources/Socio_economic_classification_data/income_dataset/X_thresh10.p'
+    out_ypath = 'local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p'
+    generate_denser_data(in_xpath, in_ypath, out_xpath, out_ypath, 10)
+
+    # adj = read_pickle('local_resources/Socio_economic_classification_data/income_dataset/X.p')
+    # assess_sparsity(adj)
+    # adj = read_pickle('resources/test/balanced7_10_thresh_X.p')
+    # df = adj2edgelist(adj)
+    # persist_edgelist(df, 'resources/test/balanced7_10_thresh.edgelist')
 
     # edge_list = pd.read_csv('local_resources/zachary_karate/karate.edgelist', header=None)
     # x = public_edge_list_to_sparse_mat(edge_list)
