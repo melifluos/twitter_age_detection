@@ -332,20 +332,21 @@ def scenario_build_balanced7_10_thresh_embeddings():
 
 def scenario_build_income_embeddings():
     print 'reading data'
-    x, y = utils.read_data('local_resources/Socio_economic_classification_data/income_dataset/X.p',
-                           'local_resources/Socio_economic_classification_data/income_dataset/y.p', 1)
+    x, y = utils.read_data('local_resources/Socio_economic_classification_data/income_dataset/X_thresh10.p',
+                           'local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p', 0)
     s = datetime.now()
     g = BipartiteGraph(x)
     print 'building edges'
     g.build_edge_array()
     print 'generating walks'
     walks = g.generate_walks(10, 80)
-    g.learn_embeddings(walks, 128, 'resources/test/balanced7.emd')
+    g.learn_embeddings(walks, 64, 'local_resources/Socio_economic_classification_data/income_dataset/thresh10_64.emd')
     print datetime.now() - s, ' s'
     print walks.shape
     df = pd.DataFrame(walks)
-    df.to_csv('resources/test/balanced7_walks.csv', index=False, header=None)
+    df.to_csv('local_resources/Socio_economic_classification_data/income_dataset/thresh10_walks.csv', index=False,
+              header=None)
 
 
 if __name__ == '__main__':
-    scenario_build_balanced7_10_thresh_embeddings()
+    scenario_build_income_embeddings()

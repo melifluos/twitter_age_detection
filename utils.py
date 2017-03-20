@@ -432,7 +432,10 @@ def read_data(x_path, y_path, threshold):
     :return:
     """
     targets = read_pickle(y_path)
-    y = np.array(targets['cat'])
+    try:
+        y = np.array(targets['cat'])
+    except KeyError:  # doing income instead of age
+        y = np.array(targets['mean_income'])
     X = read_pickle(x_path)
     X1, cols = remove_sparse_features(X, threshold=threshold)
     print X1.shape
@@ -476,7 +479,6 @@ def generate_denser_data(in_xpath, in_ypath, out_xpath, out_ypath, thresh):
     # lost_rows = sums == 0
     # lost_rows = np.array(lost_rows.flatten())
     X_new = X[good_rows, :]
-    y_new = y[good_rows, :]
     try:
         y_new = y[good_rows, :]
     except TypeError:  # got a DataFrame
@@ -502,7 +504,10 @@ def read_pickle(path):
 
 def read_target(path):
     targets = read_pickle(path)
-    targets.cat = targets.cat.astype(int)
+    try:
+        targets.cat = targets.cat.astype(int)
+    except AttributeError:
+        targets.income = targets.income.astype(int)
     targets.fan_idx = targets.fan_idx.astype(int)
     return targets
 
