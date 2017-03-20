@@ -165,25 +165,27 @@ def neural_ltv_regression_cust_emd_scenario():
 
 
 def income_scenario():
-    names = np.array(
-        [['ridge without emd', 'RF without emd'],
-         ['ridge with emd', 'RF with emd'],
-         ['ridge just emd', 'RF just emd']])
-    y_path = 'local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p'
-    x_path = 'local_resources/Socio_economic_classification_data/income_dataset/X_thresh10.p'
+    # names = np.array(
+    #     [['ridge without emd', 'RF without emd'],
+    #      ['ridge with emd', 'RF with emd'],
+    #      ['ridge just emd', 'RF just emd']])
+    names = [['ridge', 'RF']]
+    y_path = '../local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p'
+    emd_path = '../local_resources/Socio_economic_classification_data/income_dataset/thresh10_64.emd'
 
     target = utils.read_target(y_path)
+    x = utils.read_embedding(emd_path, target)
+    y = np.array(target['mean_income'])
     n_folds = 3
-    x, y = utils.read_data(x_path, y_path, threshold=1)
+    # x, y = utils.read_data(x_path, y_path, threshold=1)
     results = run_all_datasets([x], y, names, regressors, n_folds)
-    all_results = utils.merge_results(results)
-    results = utils.stats_test(all_results)
-    print 'macro', results[0]
-    print 'micro', results[1]
-    macro_path = 'local_results/income/thresh10_macro' + utils.get_timestamp() + '.csv'
-    micro_path = 'local_results/income/thresh10_micro' + utils.get_timestamp() + '.csv'
-    results[0].to_csv(macro_path, index=True)
-    results[1].to_csv(micro_path, index=True)
+    # all_results = utils.merge_results(results)
+    all_results = pd.concat([x for x in results])
+    all_results.rename(columns={n_folds: 'train'}, inplace=True)
+    results, tests = t_tests(all_results)
+    print results
+    path = '../local_results/income/thresh10_' + utils.get_timestamp() + '.csv'
+    results.to_csv(path, index=True)
 
 
 if __name__ == '__main__':

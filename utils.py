@@ -507,7 +507,7 @@ def read_target(path):
     try:
         targets.cat = targets.cat.astype(int)
     except AttributeError:
-        targets.income = targets.income.astype(int)
+        targets.mean_income = targets.mean_income.astype(int)
     targets.fan_idx = targets.fan_idx.astype(int)
     return targets
 
