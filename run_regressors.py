@@ -16,6 +16,7 @@ from sklearn.externals import joblib
 from scipy import stats
 import numpy as np
 from math import sqrt
+from scipy.stats import pearsonr
 
 regressors = [
     # LinearRegression(),  can't handle categorical variables
@@ -45,12 +46,12 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
         # Initialize a classifier with key word arguments
         clf.fit(X_train, y_train)
         preds = clf.predict(X_test)
-        results.loc[name, idx] = sqrt(mean_squared_error(y[test_index], preds))
+        results.loc[name, idx] = mean_absolute_error(y[test_index], preds)
         y_pred[test_index] = preds
     # add on training F1
     clf.fit(X, y)
     preds = clf.predict(X)
-    results.loc[name, n_folds] = sqrt(mean_squared_error(y, preds))
+    results.loc[name, n_folds] = mean_absolute_error(y, preds)
     y_pred[test_index] = preds
 
     return y_pred, results
@@ -67,6 +68,7 @@ def run_regressors(X, y, names, regressors, n_folds):
     results.index = names
     for name, detector in zip(names, regressors):
         y_pred, results = run_cv_pred(X, y, detector, n_folds, name, results)
+        print 'pearson correlation ', name, ' is: ', pearsonr(y, y_pred)
     return results
 
 
@@ -170,13 +172,14 @@ def income_scenario():
     #      ['ridge with emd', 'RF with emd'],
     #      ['ridge just emd', 'RF just emd']])
     names = [['ridge', 'RF']]
+    # names = [['ridge']]
     y_path = '../local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p'
     emd_path = '../local_resources/Socio_economic_classification_data/income_dataset/thresh10_64.emd'
 
     target = utils.read_target(y_path)
     x = utils.read_embedding(emd_path, target)
     y = np.array(target['mean_income'])
-    n_folds = 3
+    n_folds = 10
     # x, y = utils.read_data(x_path, y_path, threshold=1)
     results = run_all_datasets([x], y, names, regressors, n_folds)
     # all_results = utils.merge_results(results)
@@ -184,9 +187,27 @@ def income_scenario():
     all_results.rename(columns={n_folds: 'train'}, inplace=True)
     results, tests = t_tests(all_results)
     print results
-    path = '../local_results/income/thresh10_' + utils.get_timestamp() + '.csv'
+    path = '../results/income/thresh10_' + utils.get_timestamp() + '.csv'
     results.to_csv(path, index=True)
 
 
+def nikos_test_scenario():
+    names = [['ridge']]
+    y_path = '../local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p'
+    emd_path = '../local_resources/income_embeddings.csv'
+
+    target = utils.read_target(y_path)
+    x = pd.read_csv(emd_path, index_col=0)
+    x = x.as_matrix()
+    y = np.array(target['mean_income'])
+    n_folds = 10
+    # x, y = utils.read_data(x_path, y_path, threshold=1)
+    results = run_all_datasets([x], y, names, regressors, n_folds)
+    # all_results = utils.merge_results(results)
+    all_results = pd.concat([x for x in results])
+    all_results.rename(columns={n_folds: 'train'}, inplace=True)
+    results, tests = t_tests(all_results)
+    print results
+
 if __name__ == '__main__':
-    income_scenario()
+    nikos_test_scenario()

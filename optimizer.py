@@ -13,10 +13,11 @@ import utils
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, StratifiedKFold
 from scipy.stats import randint as sp_randint
 from scipy.stats import uniform, expon
-from sklearn.metrics import f1_score, make_scorer
+from sklearn.metrics import f1_score, make_scorer, mean_absolute_error
 from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression, LinearRegression, Ridge, Lasso
+
 
 x_path = 'resources/test/balanced7_100_thresh_X.p'
 y_path = 'resources/test/balanced7_100_thresh_y.p'
@@ -99,6 +100,26 @@ def configure_pybo(X, y):
     return f
 
 
+def configure_regression_pybo(X, y):
+    """
+    A function that returns a classifier function with a single argument to be optimized
+    :param X: features
+    :param y: targets
+    :return: function to be optimised
+    """
+
+    def f(x):
+        # the pybo code passes x as an array, which scikit-learn doesn't like, hence x[0]
+        regressor = Ridge(alpha=x[0], solver='auto', max_iter=1000)
+        pred = run_cv_pred(X, y, regressor, n_folds=3)
+        return -mean_absolute_error(y, pred)
+
+    return f
+
+
+ridge_param_dist = {'alpha': expon(scale=100)}
+
+
 # def plot_pybo(info);
 #     make some predictions
 #     mu, s2 = model.predict(x[:, None])
@@ -159,6 +180,30 @@ def run_pybo():
         print names[i]
         f = configure_pybo(features, y)
         bounds = np.array([0.0, 100.0])
+        xbest, model, info = solve_bayesopt(f, bounds.T, niter=30, verbose=True)
+        print("Bayesian optimisation took %.2f seconds for %d candidates"
+              " parameter settings." % ((time() - start), n_iter_search))
+        print xbest
+
+
+def run_ridge_pybo():
+    # names = [['ridge', 'RF']]
+    names = [['ridge']]
+    y_path = 'local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p'
+    emd_path = 'local_resources/Socio_economic_classification_data/income_dataset/thresh10_64.emd'
+
+    target = utils.read_target(y_path)
+    x = utils.read_embedding(emd_path, target)
+    X = [x]
+    y = np.array(target['mean_income'])
+
+    n_iter_search = 30
+
+    start = time()
+    for i, features in enumerate(X):
+        print names[i]
+        f = configure_regression_pybo(features, y)
+        bounds = np.array([0.0, 1000.0])
         xbest, model, info = solve_bayesopt(f, bounds.T, niter=30, verbose=True)
         print("Bayesian optimisation took %.2f seconds for %d candidates"
               " parameter settings." % ((time() - start), n_iter_search))
@@ -233,4 +278,5 @@ def run_logistic_random_search():
 
 if __name__ == '__main__':
     # run_pybo()
-    main()
+    # main()
+    run_ridge_pybo()
