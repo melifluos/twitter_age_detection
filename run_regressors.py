@@ -171,8 +171,8 @@ def income_scenario():
     #     [['ridge without emd', 'RF without emd'],
     #      ['ridge with emd', 'RF with emd'],
     #      ['ridge just emd', 'RF just emd']])
-    names = [['ridge', 'RF']]
-    # names = [['ridge']]
+    # names = [['ridge', 'RF']]
+    names = [['ridge']]
     y_path = '../local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p'
     emd_path = '../local_resources/Socio_economic_classification_data/income_dataset/thresh10_64.emd'
 
@@ -191,23 +191,51 @@ def income_scenario():
     results.to_csv(path, index=True)
 
 
+def income_different_size_embedding_scenario():
+    # names = np.array(
+    #     [['ridge without emd', 'RF without emd'],
+    #      ['ridge with emd', 'RF with emd'],
+    #      ['ridge just emd', 'RF just emd']])
+    # names = [['ridge', 'RF']]
+    names = [['ridge']]
+    y_path = '../local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p'
+
+    target = utils.read_target(y_path)
+    y = np.array(target['mean_income'])
+    n_folds = 10
+    sizes = [16, 32, 64, 128]
+    for size in sizes:
+        print 'running embeddings of size ', size
+        emd_path = '../local_resources/Socio_economic_classification_data/income_dataset/thresh10_{0}.emd'.format(size)
+        x = utils.read_embedding(emd_path, target)
+        results = run_all_datasets([x], y, names, regressors, n_folds)
+        # all_results = utils.merge_results(results)
+        all_results = pd.concat([x for x in results])
+        all_results.rename(columns={n_folds: 'train'}, inplace=True)
+        results, tests = t_tests(all_results)
+        print results
+        path = '../results/income/thresh10_' + str(size) + '_' + utils.get_timestamp() + '.csv'
+        results.to_csv(path, index=True)
+
+
 def nikos_test_scenario():
     names = [['ridge']]
     y_path = '../local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p'
-    emd_path = '../local_resources/income_embeddings.csv'
-
     target = utils.read_target(y_path)
-    x = pd.read_csv(emd_path, index_col=0)
-    x = x.as_matrix()
     y = np.array(target['mean_income'])
     n_folds = 10
-    # x, y = utils.read_data(x_path, y_path, threshold=1)
-    results = run_all_datasets([x], y, names, regressors, n_folds)
-    # all_results = utils.merge_results(results)
-    all_results = pd.concat([x for x in results])
-    all_results.rename(columns={n_folds: 'train'}, inplace=True)
-    results, tests = t_tests(all_results)
-    print results
+    sizes = [16, 32, 64, 128]
+    for size in sizes:
+        print 'running for size {} \n'.format(size)
+        emd_path = '../local_resources/Socio_economic_classification_data/income_dataset/thresh10_{0}.emd'.format(size)
+        x = pd.read_csv(emd_path, index_col=0)
+        x = x.as_matrix()
+        results = run_all_datasets([x], y, names, regressors, n_folds)
+        all_results = pd.concat([x for x in results])
+        all_results.rename(columns={n_folds: 'train'}, inplace=True)
+        results, tests = t_tests(all_results)
+        print results
+
 
 if __name__ == '__main__':
     nikos_test_scenario()

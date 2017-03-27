@@ -149,7 +149,7 @@ def forward(examples, labels, opts):
     sampled_b = tf.nn.embedding_lookup(sm_b, sampled_ids)
 
     # True logits: [batch_size, 1]
-    true_logits = tf.reduce_sum(tf.mul(example_emb, true_w), 1) + true_b
+    true_logits = tf.reduce_sum(tf.multiply(example_emb, true_w), 1) + true_b
 
     # Sampled logits: [batch_size, num_sampled]
     # We replicate sampled noise labels for all examples in the batch
@@ -166,9 +166,9 @@ def nce_loss(true_logits, sampled_logits, batch_size):
 
     # cross-entropy(logits, labels)
     true_xent = tf.nn.sigmoid_cross_entropy_with_logits(
-        true_logits, tf.ones_like(true_logits))
+        logits=true_logits, labels=tf.ones_like(true_logits))
     sampled_xent = tf.nn.sigmoid_cross_entropy_with_logits(
-        sampled_logits, tf.zeros_like(sampled_logits))
+        logits=sampled_logits, labels=tf.zeros_like(sampled_logits))
 
     # NCE-loss is the sum of the true and noise (sampled words)
     # contributions, averaged over the batch.

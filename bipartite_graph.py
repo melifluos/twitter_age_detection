@@ -152,7 +152,7 @@ class BipartiteGraph:
 
         model = Word2Vec(walk_list, size=size, window=window_size, min_count=0, sg=1, workers=4,
                          iter=5)
-        model.save_word2vec_format(outpath)
+        model.wv.save_word2vec_format(outpath)
 
 
 def scenario_debug():
@@ -340,7 +340,8 @@ def scenario_build_income_embeddings():
     g.build_edge_array()
     print 'generating walks'
     walks = g.generate_walks(10, 80)
-    g.learn_embeddings(walks, 64, 'local_resources/Socio_economic_classification_data/income_dataset/thresh10_64.emd')
+    g.learn_embeddings(walks, 64,
+                       'local_resources/Socio_economic_classification_data/income_dataset/thresh10_64.emd')
     print datetime.now() - s, ' s'
     print walks.shape
     df = pd.DataFrame(walks)
@@ -348,5 +349,45 @@ def scenario_build_income_embeddings():
               header=None)
 
 
+def scenario_build_different_size_income_embeddings():
+    print 'reading data'
+    x, y = utils.read_data('local_resources/Socio_economic_classification_data/income_dataset/X_thresh10.p',
+                           'local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p', 0)
+    s = datetime.now()
+    g = BipartiteGraph(x)
+    # print 'building edges'
+    # g.build_edge_array()
+    walks = pd.read_csv('local_resources/Socio_economic_classification_data/income_dataset/thresh10_walks.csv',
+                        header=None).values
+    sizes = [16, 32, 64, 128]
+    for size in sizes:
+        g.learn_embeddings(walks, size,
+                           'local_resources/Socio_economic_classification_data/income_dataset/thresh10_' + str(
+                               size) + '.emd')
+        print 'size ', str(size), ' embeddings generated in ', datetime.now() - s, ' s'
+
+
+def reindex_embeddings():
+    """
+    changes the first column of embeddings from an index to a Twitter ID
+    :return:
+    """
+    y_path = 'local_resources/Socio_economic_classification_data/income_dataset/y_thresh10.p'
+    target = utils.read_target(y_path)
+    sizes = [16, 32, 64, 128]
+
+    for size in sizes:
+        print 'running embeddings of size ', size
+        emd_path = 'local_resources/Socio_economic_classification_data/income_dataset/thresh10_{0}.emd'.format(size)
+        x = utils.read_embedding(emd_path, target)
+        df = pd.DataFrame(data=x, index=target.index)
+        try:
+            del df.index.name
+        except AttributeError:
+            pass
+        df.to_csv(emd_path)
+
+
 if __name__ == '__main__':
-    scenario_build_income_embeddings()
+    scenario_build_different_size_income_embeddings()
+    reindex_embeddings()

@@ -86,7 +86,7 @@ def build_model(input_units, output_units):
     # Define loss and optimizer
     y_ = tf.placeholder(tf.float32, [None, 10])
 
-    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
+    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y, labels=y_))
     # This returns a function that performs a single step of gradient descent through backprop
     train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
 
@@ -117,11 +117,11 @@ def main():
     # Define loss and optimizer
     y_ = tf.placeholder(tf.float32, [None, 10])
 
-    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
+    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=y, labels=y_))
     # This returns a function that performs a single step of gradient descent through backprop
     train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
     sess = tf.InteractiveSession()
-    tf.initialize_all_variables().run()
+    tf.global_variables_initializer().run()
     # Train
     # tf.initialize_all_variables().run()
     for _ in range(2):
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     train_step, vars = build_model(X.shape[1], 10)
     # using an interactive session allows us to interleave building and running elements of the graph
     sess = tf.InteractiveSession()
-    tf.initialize_all_variables().run()
+    tf.global_variables_initializer().run()
     tf_model = tf_model(vars, train_step, sess, batch_size=100, training_iters=1000)
     y_pred = utils.run_cv_pred(X, y, n_folds=2, model=tf_model)
     utils.get_metrics(y, y_pred)

@@ -46,7 +46,7 @@ cross_entropy = -tf.reduce_sum(y_ * tf.log(y))
 meansq = tf.reduce_mean(tf.square(y_ - y))
 train_step = tf.train.GradientDescentOptimizer(0.05).minimize(meansq)
 
-init = tf.initialize_all_variables()
+init = tf.global_variables_initializer()
 sess = tf.Session()
 sess.run(init)
 
