@@ -106,7 +106,7 @@ class AgeDetector:
         return predicted_cat
 
 
-def run_cv_pred(X, y, clf, n_folds, name, results):
+def run_cv_pred(X, y, clf, n_folds):
     """
     Run n-fold cross validation returning a prediction for every row of X
     :param X: A scipy sparse feature matrix
@@ -116,7 +116,7 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     :return:
     """
     # Construct a kfolds object
-    skf = StratifiedKFold(n_splits=n_folds)
+    skf = StratifiedKFold(n_splits=n_folds, shuffle=True)
     splits = skf.split(X, y)
     y_pred = y.copy()
 
@@ -126,19 +126,19 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
         y_train = y[train_index]
         # Initialize a classifier with key word arguments
         clf.fit(X_train, y_train)
-        try:  # Gradient boosted trees do not accept sparse matrices in the predict function currently
-            preds = clf.predict(X_test)
-        except TypeError:
-            preds = clf.predict(X_test.todense())
+        preds = clf.predict(X_test)
         macro, micro = utils.get_metrics(preds, y[test_index])
-        results[0].loc[name, idx] = macro
-        results[1].loc[name, idx] = micro
+        print 'macro: ', macro
+        print 'micro: ', micro
         y_pred[test_index] = preds
 
-    return y_pred, results
+    return y_pred
 
 
 if __name__ == '__main__':
     y_path = 'resources/test/balanced7_10_thresh_y.p'
     x_path = 'resources/test/balanced7_10_thresh_X.p'
     x, y = utils.read_data(x_path, y_path, threshold=0)
+    clf = AgeDetector()
+    n_folds = 3
+    y_pred = run_cv_pred(x, y, clf, n_folds)

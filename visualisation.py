@@ -23,7 +23,7 @@ def tsne_plot():
     embedding = model.fit_transform(X1)
 
     # sb.set_context("notebook", font_scale=1.1)
-    sb.set_style("ticks")
+    sns.set_style("ticks")
 
     print X1.shape
 

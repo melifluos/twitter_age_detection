@@ -136,7 +136,7 @@ def run_cv_pred(X, y, clf, n_folds, name, results):
     :return:
     """
     # Construct a kfolds object
-    skf = StratifiedKFold(n_splits=n_folds, shuffle=True)
+    skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=0)
     splits = skf.split(X, y)
     y_pred = y.copy()
 
@@ -969,9 +969,10 @@ def bayesian_age_detector_scenario():
     results[1].to_csv(micro_path, index=True)
 
 if __name__ == "__main__":
-    karate_scenario()
+    # karate_scenario()
     # generate_graphs_scenario()
-    balanced7_pq_best_scenario()
+    # balanced7_pq_best_scenario()
+    balanced7_10_thresh_scenario()
     # size = 201
     # X, y = read_data(5, size)
     # print X[0].shape
