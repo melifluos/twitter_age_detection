@@ -127,7 +127,7 @@ class Graph2Vecs():
         sampled_b = tf.nn.embedding_lookup(sm_b, sampled_ids)
 
         # True logits: [batch_size, 1]
-        true_logits = tf.reduce_sum(tf.mul(example_emb, true_w), 1) + true_b
+        true_logits = tf.reduce_sum(tf.multiply(example_emb, true_w), 1) + true_b
 
         # Sampled logits: [batch_size, num_sampled]
         # We replicate sampled noise labels for all examples in the batch
@@ -144,9 +144,9 @@ class Graph2Vecs():
 
         # cross-entropy(logits, labels)
         true_xent = tf.nn.sigmoid_cross_entropy_with_logits(
-            true_logits, tf.ones_like(true_logits))
+            logits=true_logits, labels=tf.ones_like(true_logits))
         sampled_xent = tf.nn.sigmoid_cross_entropy_with_logits(
-            sampled_logits, tf.zeros_like(sampled_logits))
+            logits=sampled_logits, labels=tf.zeros_like(sampled_logits))
 
         # NCE-loss is the sum of the true and noise (sampled words)
         # contributions, averaged over the batch.
@@ -169,6 +169,7 @@ class Graph2Vecs():
         #     self.train = self.optimize(loss)
 
 def initialize_embedding():
+    pass
 
 # produce batch of data
 
@@ -376,7 +377,7 @@ def karate_scenario():
         params = Params(batch_size=4, embedding_size=size, neg_samples=5, skip_window=3, num_pairs=1500,
                         logging_interval=100,
                         initial_learning_rate=0.2)
-        embedding = main('local_resources/zachary_karate/tf.emd', walks, unigrams, vocab_size, params)
+        embedding = main('local_resources/zachary_karate/tf.emd', walks, unigrams, params)
         embeddings.append(embedding)
         names.append(['window' + str(window)])
         if size == 2:
@@ -466,5 +467,5 @@ def compare_embeddings():
 
 if __name__ == '__main__':
     s = datetime.datetime.now()
-    compare_embeddings()
+    karate_scenario()
     print(datetime.datetime.now() - s)
