@@ -499,7 +499,7 @@ def get_timestamp():
 
 def read_pickle(path):
     with open(path, 'rb') as infile:
-        return pickle.load(infile)
+        return pd.read_pickle(infile)
 
 
 def read_target(path):
